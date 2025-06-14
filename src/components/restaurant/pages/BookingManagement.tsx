@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,8 @@ import {
   CheckCircle,
   XCircle,
   QrCode,
-  MessageSquare
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurantBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
@@ -25,6 +27,29 @@ const BookingManagement = () => {
   
   const { data: bookings = [], isLoading } = useRestaurantBookings(user?.id || '');
   const updateBookingStatus = useUpdateBookingStatus();
+
+  // Ottimizzazione: uso useMemo per calcoli costosi
+  const bookingStats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const todayBookings = bookings.filter(booking => {
+      const bookingDate = booking.date instanceof Date 
+        ? booking.date.toISOString().split('T')[0]
+        : new Date(booking.date).toISOString().split('T')[0];
+      return bookingDate === today;
+    });
+
+    const pendingBookings = bookings.filter(booking => booking.status === 'pending');
+    const confirmedBookings = bookings.filter(booking => booking.status === 'confirmed');
+    const completedBookings = bookings.filter(booking => booking.status === 'completed');
+
+    return {
+      today: todayBookings,
+      pending: pendingBookings,
+      confirmed: confirmedBookings,
+      completed: completedBookings
+    };
+  }, [bookings]);
 
   const handleConfirmBooking = (id: string) => {
     updateBookingStatus.mutate({ bookingId: id, status: 'confirmed' });
@@ -108,36 +133,35 @@ const BookingManagement = () => {
     });
   };
 
-  const getBookingsByStatus = (status: string) => {
-    return bookings.filter(booking => booking.status === status);
-  };
-
   const formatDate = (date: Date) => {
     return date.toISOString().split('T')[0];
   };
 
-  const todayBookings = getBookingsByDate(formatDate(new Date()));
   const selectedDateBookings = selectedDate ? getBookingsByDate(formatDate(selectedDate)) : [];
 
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
-        <div className="text-green-600">Caricamento prenotazioni...</div>
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+          <div className="text-green-600">Caricamento prenotazioni...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-green-800">Gestione Prenotazioni</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-green-800">Gestione Prenotazioni</h1>
           <p className="text-green-600 text-sm">Gestisci le prenotazioni del tuo ristorante</p>
         </div>
         <Button
           onClick={() => setShowScanner(true)}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+          size="sm"
         >
           <QrCode className="w-4 h-4 mr-2" />
           Scansiona QR
@@ -157,12 +181,12 @@ const BookingManagement = () => {
         <Card className="border-green-200">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
-                <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <CalendarIcon className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs md:text-sm text-gray-600">Oggi</p>
-                <p className="text-lg md:text-xl font-bold text-green-800">{todayBookings.length}</p>
+                <p className="text-lg md:text-xl font-bold text-green-800">{bookingStats.today.length}</p>
               </div>
             </div>
           </CardContent>
@@ -171,12 +195,12 @@ const BookingManagement = () => {
         <Card className="border-green-200">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-yellow-100 rounded-lg">
-                <Clock className="w-4 h-4 md:w-5 md:h-5 text-yellow-600" />
+              <div className="p-1.5 md:p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                <Clock className="w-3 h-3 md:w-4 md:h-4 text-yellow-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs md:text-sm text-gray-600">In Attesa</p>
-                <p className="text-lg md:text-xl font-bold text-yellow-600">{getBookingsByStatus('pending').length}</p>
+                <p className="text-lg md:text-xl font-bold text-yellow-600">{bookingStats.pending.length}</p>
               </div>
             </div>
           </CardContent>
@@ -185,12 +209,12 @@ const BookingManagement = () => {
         <Card className="border-green-200">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg">
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+              <div className="p-1.5 md:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-blue-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs md:text-sm text-gray-600">Confermate</p>
-                <p className="text-lg md:text-xl font-bold text-blue-600">{getBookingsByStatus('confirmed').length}</p>
+                <p className="text-lg md:text-xl font-bold text-blue-600">{bookingStats.confirmed.length}</p>
               </div>
             </div>
           </CardContent>
@@ -199,14 +223,12 @@ const BookingManagement = () => {
         <Card className="border-green-200">
           <CardContent className="p-3 md:p-4">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <Users className="w-3 h-3 md:w-4 md:h-4 text-green-600" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs md:text-sm text-gray-600">Completate</p>
-                <p className="text-lg md:text-xl font-bold text-green-600">
-                  {getBookingsByStatus('completed').length}
-                </p>
+                <p className="text-lg md:text-xl font-bold text-green-600">{bookingStats.completed.length}</p>
               </div>
             </div>
           </CardContent>
@@ -227,25 +249,25 @@ const BookingManagement = () => {
               <CardTitle className="text-green-800 text-lg">Prenotazioni di Oggi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {todayBookings.length > 0 ? (
-                todayBookings.map(booking => (
+              {bookingStats.today.length > 0 ? (
+                bookingStats.today.map(booking => (
                   <div key={booking.id} className="p-3 md:p-4 border border-green-200 rounded-lg">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1 min-w-0">
                         <div className="flex items-center gap-3 md:gap-4">
-                          <div className="text-center">
-                            <div className="font-semibold text-green-800 text-sm md:text-base">{booking.time}</div>
-                            <div className="text-xs md:text-sm text-gray-500">{booking.guests} persone</div>
+                          <div className="text-center flex-shrink-0">
+                            <div className="font-semibold text-green-800 text-xs md:text-sm">{booking.time}</div>
+                            <div className="text-xs text-gray-500">{booking.guests} persone</div>
                           </div>
-                          <div>
-                            <div className="font-medium text-green-800 text-sm">Cliente ID: {booking.clientId}</div>
-                            <div className="text-xs text-gray-600">QR: {booking.qrCode}</div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-green-800 text-xs md:text-sm truncate">Cliente ID: {booking.clientId}</div>
+                            <div className="text-xs text-gray-600 truncate">QR: {booking.qrCode}</div>
                           </div>
                         </div>
                         {booking.specialRequests && (
-                          <div className="flex items-center gap-2 text-xs md:text-sm">
-                            <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-gray-400" />
-                            <span className="text-gray-600">{booking.specialRequests}</span>
+                          <div className="flex items-start gap-2 text-xs md:text-sm">
+                            <MessageSquare className="w-3 h-3 md:w-4 md:h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <span className="text-gray-600 break-words">{booking.specialRequests}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
@@ -267,13 +289,13 @@ const BookingManagement = () => {
                         </div>
                       </div>
                       
-                      <div className="flex flex-row md:flex-col gap-2">
+                      <div className="flex flex-row gap-2 md:flex-col">
                         {booking.status === 'pending' && (
                           <>
                             <Button
                               size="sm"
                               onClick={() => handleConfirmBooking(booking.id)}
-                              className="bg-green-600 hover:bg-green-700 text-xs"
+                              className="bg-green-600 hover:bg-green-700 text-xs flex-1 md:flex-none h-8"
                             >
                               <CheckCircle className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                               Conferma
@@ -282,7 +304,7 @@ const BookingManagement = () => {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleRejectBooking(booking.id)}
-                              className="text-xs"
+                              className="text-xs flex-1 md:flex-none h-8"
                             >
                               <XCircle className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                               Rifiuta
@@ -294,7 +316,7 @@ const BookingManagement = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => setShowScanner(true)}
-                            className="border-green-200 text-green-600 text-xs"
+                            className="border-green-200 text-green-600 text-xs w-full md:w-auto h-8"
                           >
                             <QrCode className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                             Scansiona QR
@@ -395,8 +417,8 @@ const BookingManagement = () => {
               <CardTitle className="text-green-800">Prenotazioni in Attesa</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {getBookingsByStatus('pending').length > 0 ? (
-                getBookingsByStatus('pending').map(booking => (
+              {bookingStats.pending.length > 0 ? (
+                bookingStats.pending.map(booking => (
                   <div key={booking.id} className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">

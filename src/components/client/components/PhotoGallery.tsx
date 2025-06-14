@@ -26,12 +26,11 @@ const PhotoGallery = ({ restaurantId }: PhotoGalleryProps) => {
     selectedCategory === 'tutte' ? undefined : selectedCategory
   );
 
+  // Ridotte le categorie a solo ambiente e piatti
   const categories = [
     { key: 'tutte', label: 'Tutte' },
     { key: 'ambiente', label: 'Ambiente' },
-    { key: 'piatti', label: 'Piatti' },
-    { key: 'esterni', label: 'Esterni' },
-    { key: 'staff', label: 'Staff' }
+    { key: 'piatti', label: 'Piatti' }
   ];
 
   const openImageModal = (imageUrl: string) => {

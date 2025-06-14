@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,17 +128,27 @@ const MenuManagement = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-full overflow-x-hidden">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-green-800">Gestione Menù</h1>
-        <p className="text-green-600">Gestisci il menù del tuo ristorante</p>
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-green-800">Gestione Menù</h1>
+          <p className="text-green-600 text-sm">Gestisci il menù del tuo ristorante</p>
+        </div>
+        <Button
+          onClick={() => setIsAddingItem(true)}
+          className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+          size="sm"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Aggiungi Piatto
+        </Button>
       </div>
 
-      <Tabs defaultValue="pdf" className="space-y-6">
+      <Tabs defaultValue="pdf" className="space-y-4 md:space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pdf">Menù PDF</TabsTrigger>
-          <TabsTrigger value="interactive">Menù Interattivo</TabsTrigger>
+          <TabsTrigger value="pdf" className="text-xs md:text-sm">Menù PDF</TabsTrigger>
+          <TabsTrigger value="interactive" className="text-xs md:text-sm">Menù Interattivo</TabsTrigger>
         </TabsList>
 
         {/* PDF Menu Tab */}
@@ -147,27 +158,16 @@ const MenuManagement = () => {
 
         {/* Interactive Menu Tab */}
         <TabsContent value="interactive" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-green-800">Menù Interattivo</h2>
-            <Button
-              onClick={() => setIsAddingItem(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Aggiungi Piatto
-            </Button>
-          </div>
-
           {/* Add New Item Form */}
           {isAddingItem && (
             <Card className="border-green-200">
               <CardHeader>
-                <CardTitle className="text-green-800">Aggiungi Nuovo Piatto</CardTitle>
+                <CardTitle className="text-green-800 text-lg">Aggiungi Nuovo Piatto</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Nome Piatto</Label>
+                    <Label htmlFor="name" className="text-sm">Nome Piatto</Label>
                     <Input
                       id="name"
                       value={newItem.name}
@@ -176,7 +176,7 @@ const MenuManagement = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Prezzo (€)</Label>
+                    <Label htmlFor="price" className="text-sm">Prezzo (€)</Label>
                     <Input
                       id="price"
                       type="number"
@@ -189,7 +189,7 @@ const MenuManagement = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Descrizione</Label>
+                  <Label htmlFor="description" className="text-sm">Descrizione</Label>
                   <Textarea
                     id="description"
                     value={newItem.description}
@@ -200,7 +200,7 @@ const MenuManagement = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Categoria</Label>
+                  <Label htmlFor="category" className="text-sm">Categoria</Label>
                   <select
                     id="category"
                     value={newItem.category}
@@ -214,13 +214,13 @@ const MenuManagement = () => {
                 </div>
 
                 <div>
-                  <Label>Allergeni</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <Label className="text-sm">Allergeni</Label>
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {commonAllergens.map(allergen => (
                       <Badge
                         key={allergen}
                         variant={newItem.allergens.includes(allergen) ? "default" : "outline"}
-                        className={`cursor-pointer ${
+                        className={`cursor-pointer text-xs ${
                           newItem.allergens.includes(allergen) 
                             ? 'bg-red-600 hover:bg-red-700' 
                             : 'border-red-200 text-red-600 hover:bg-red-50'
@@ -245,10 +245,11 @@ const MenuManagement = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-4">
+                <div className="flex flex-col md:flex-row gap-2 pt-4">
                   <Button
                     onClick={handleAddItem}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 w-full md:w-auto"
+                    size="sm"
                   >
                     <Save className="w-4 h-4 mr-2" />
                     Salva Piatto
@@ -256,6 +257,8 @@ const MenuManagement = () => {
                   <Button
                     variant="outline"
                     onClick={() => setIsAddingItem(false)}
+                    className="w-full md:w-auto"
+                    size="sm"
                   >
                     Annulla
                   </Button>
@@ -272,22 +275,22 @@ const MenuManagement = () => {
             return (
               <Card key={category.id} className="border-green-200">
                 <CardHeader>
-                  <CardTitle className="text-green-800">{category.name}</CardTitle>
+                  <CardTitle className="text-green-800 text-lg">{category.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {items.map(item => (
-                    <div key={item.id} className="p-4 border border-green-200 rounded-lg">
-                      <div className="flex items-start justify-between">
+                    <div key={item.id} className="p-3 md:p-4 border border-green-200 rounded-lg">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
                         <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-green-800">{item.name}</h4>
-                            <span className="font-bold text-green-600">€{item.price}</span>
+                          <div className="flex flex-col md:flex-row md:items-center gap-2">
+                            <h4 className="font-semibold text-green-800 text-sm md:text-base">{item.name}</h4>
+                            <span className="font-bold text-green-600 text-sm md:text-base">€{item.price}</span>
                             {item.glutenFree && (
-                              <Badge className="bg-green-600">Senza Glutine</Badge>
+                              <Badge className="bg-green-600 text-xs">Senza Glutine</Badge>
                             )}
                           </div>
                           {item.description && (
-                            <p className="text-gray-600 text-sm">{item.description}</p>
+                            <p className="text-gray-600 text-xs md:text-sm">{item.description}</p>
                           )}
                           {item.allergens.length > 0 && (
                             <div className="flex flex-wrap gap-1">
@@ -304,21 +307,22 @@ const MenuManagement = () => {
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-2 ml-4">
+                        <div className="flex flex-row md:flex-col gap-2">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => setEditingItem(item.id)}
-                            className="border-green-200 text-green-600"
+                            className="border-green-200 text-green-600 flex-1 md:flex-none"
                           >
-                            <Edit3 className="w-4 h-4" />
+                            <Edit3 className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDeleteItem(item.id)}
+                            className="flex-1 md:flex-none"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                         </div>
                       </div>

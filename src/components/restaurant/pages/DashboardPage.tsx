@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -78,24 +77,24 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-6">
+    <div className="max-w-7xl mx-auto p-4 space-y-4 md:space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="px-2">
-        <h1 className="text-2xl font-bold text-green-800">Dashboard</h1>
-        <p className="text-green-600">Panoramica del tuo ristorante</p>
+        <h1 className="text-xl md:text-2xl font-bold text-green-800">Dashboard</h1>
+        <p className="text-green-600 text-sm">Panoramica del tuo ristorante</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-xs md:text-sm font-medium text-green-800">
               Prenotazioni Oggi
             </CardTitle>
-            <Calendar className="h-4 w-4 text-green-600" />
+            <Calendar className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{stats.todayBookings}</div>
+          <CardContent className="p-3 md:p-4">
+            <div className="text-lg md:text-2xl font-bold text-green-700">{stats.todayBookings}</div>
             <p className="text-xs text-green-600">
               +2 rispetto a ieri
             </p>
@@ -104,13 +103,13 @@ const DashboardPage = () => {
 
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-xs md:text-sm font-medium text-green-800">
               Totale Prenotazioni
             </CardTitle>
-            <Users className="h-4 w-4 text-green-600" />
+            <Users className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{stats.totalBookings}</div>
+          <CardContent className="p-3 md:p-4">
+            <div className="text-lg md:text-2xl font-bold text-green-700">{stats.totalBookings}</div>
             <p className="text-xs text-green-600">
               +{stats.monthlyGrowth}% questo mese
             </p>
@@ -119,13 +118,13 @@ const DashboardPage = () => {
 
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-xs md:text-sm font-medium text-green-800">
               Rating Medio
             </CardTitle>
-            <Star className="h-4 w-4 text-green-600" />
+            <Star className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{stats.averageRating}</div>
+          <CardContent className="p-3 md:p-4">
+            <div className="text-lg md:text-2xl font-bold text-green-700">{stats.averageRating}</div>
             <p className="text-xs text-green-600">
               Su {stats.totalReviews} recensioni
             </p>
@@ -134,13 +133,13 @@ const DashboardPage = () => {
 
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-xs md:text-sm font-medium text-green-800">
               Visualizzazioni Profilo
             </CardTitle>
-            <Eye className="h-4 w-4 text-green-600" />
+            <Eye className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">{stats.profileViews}</div>
+          <CardContent className="p-3 md:p-4">
+            <div className="text-lg md:text-2xl font-bold text-green-700">{stats.profileViews}</div>
             <p className="text-xs text-green-600">
               Ultime 30 giorni
             </p>
@@ -149,13 +148,13 @@ const DashboardPage = () => {
 
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">
+            <CardTitle className="text-xs md:text-sm font-medium text-green-800">
               Crescita Mensile
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-700">+{stats.monthlyGrowth}%</div>
+          <CardContent className="p-3 md:p-4">
+            <div className="text-lg md:text-2xl font-bold text-green-700">+{stats.monthlyGrowth}%</div>
             <p className="text-xs text-green-600">
               Rispetto al mese scorso
             </p>
@@ -166,22 +165,22 @@ const DashboardPage = () => {
       {/* Today's Bookings */}
       <Card className="border-green-200">
         <CardHeader>
-          <CardTitle className="text-green-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+          <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
+            <Calendar className="w-4 h-4 md:w-5 md:h-5" />
             Prenotazioni di Oggi
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {todayBookings.map((booking) => (
-            <div key={booking.id} className="flex items-center justify-between p-3 border border-green-200 rounded-lg">
+            <div key={booking.id} className="flex flex-col md:flex-row md:items-center md:justify-between p-3 border border-green-200 rounded-lg gap-3">
               <div className="flex items-center gap-3">
-                <div className="text-center min-w-[60px]">
-                  <div className="font-semibold text-green-800 text-sm">{booking.time}</div>
+                <div className="text-center min-w-[50px] md:min-w-[60px]">
+                  <div className="font-semibold text-green-800 text-xs md:text-sm">{booking.time}</div>
                   <div className="text-xs text-gray-500">{booking.guests} pers.</div>
                 </div>
-                <div className="flex-1">
-                  <div className="font-medium text-green-800 text-sm">{booking.customerName}</div>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-green-800 text-xs md:text-sm truncate">{booking.customerName}</div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <Badge 
                       variant={
                         booking.status === 'confirmed' ? 'default' :
@@ -201,21 +200,21 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
                 {booking.status === 'pending' && (
                   <>
-                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 text-xs px-2">
+                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 text-xs px-2 h-8 flex-1 md:flex-none">
                       <XCircle className="w-3 h-3 mr-1" />
                       Rifiuta
                     </Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs px-2">
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs px-2 h-8 flex-1 md:flex-none">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Conferma
                     </Button>
                   </>
                 )}
                 {booking.status === 'confirmed' && !booking.hasArrived && (
-                  <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2">
+                  <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2 h-8 w-full md:w-auto">
                     <QrCode className="w-3 h-3 mr-1" />
                     Scansiona
                   </Button>
@@ -229,18 +228,18 @@ const DashboardPage = () => {
       {/* Recent Reviews */}
       <Card className="border-green-200">
         <CardHeader>
-          <CardTitle className="text-green-800 flex items-center gap-2">
-            <Star className="w-5 h-5" />
+          <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
+            <Star className="w-4 h-4 md:w-5 md:h-5" />
             Recensioni Recenti
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {recentReviews.map((review) => (
             <div key={review.id} className="p-3 border border-green-200 rounded-lg">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-green-800 text-sm">{review.customerName}</span>
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-3">
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2">
+                    <span className="font-medium text-green-800 text-xs md:text-sm">{review.customerName}</span>
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <Star
@@ -255,9 +254,9 @@ const DashboardPage = () => {
                     </div>
                     <span className="text-xs text-gray-500">{review.date}</span>
                   </div>
-                  <p className="text-gray-700 text-sm">{review.comment}</p>
+                  <p className="text-gray-700 text-xs md:text-sm">{review.comment}</p>
                 </div>
-                <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2 ml-3">
+                <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2 h-8 w-full md:w-auto md:ml-3">
                   Rispondi
                 </Button>
               </div>
