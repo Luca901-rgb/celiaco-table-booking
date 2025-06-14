@@ -1,78 +1,50 @@
 
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
+import { Heart, Star, MapPin, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Star, Heart, MapPin, Clock, Award, Trash2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
 
 const FavoritesPage = () => {
-  const navigate = useNavigate();
-  
-  // Mock favorites data
   const [favorites, setFavorites] = useState([
     {
       id: '1',
-      name: 'Gluten Free Bistrot',
-      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=250&fit=crop',
+      name: 'Glutenfree Paradise',
+      address: 'Via Roma 123, Milano',
       rating: 4.8,
-      reviewCount: 124,
-      distance: '0.5 km',
-      cuisine: 'Italiana',
-      priceRange: '€€',
-      openNow: true,
-      certified: true,
-      description: 'Cucina italiana completamente senza glutine',
-      lastVisit: '2 settimane fa'
+      reviewCount: 156,
+      image: '/placeholder.svg',
+      cuisine: 'Italiana senza glutine',
+      addedDate: '2024-01-15'
     },
     {
-      id: '2',
-      name: 'Celiac Garden',
-      image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=250&fit=crop',
+      id: '3',
+      name: 'Safe Eats',
+      address: 'Via Brera 78, Milano',
       rating: 4.9,
-      reviewCount: 89,
-      distance: '1.2 km',
+      reviewCount: 203,
+      image: '/placeholder.svg',
       cuisine: 'Mediterranea',
-      priceRange: '€€€',
-      openNow: true,
-      certified: true,
-      description: 'Piatti mediterranei certificati senza glutine',
-      lastVisit: '1 mese fa'
+      addedDate: '2024-01-10'
     }
   ]);
 
-  const removeFavorite = (id: string, name: string) => {
-    setFavorites(favorites.filter(fav => fav.id !== id));
-    toast({
-      title: "Rimosso dai preferiti",
-      description: `${name} è stato rimosso dai tuoi preferiti`
-    });
-  };
-
-  const handleRestaurantClick = (id: string) => {
-    navigate(`/client/restaurant/${id}`);
+  const removeFavorite = (restaurantId: string) => {
+    setFavorites(favorites.filter(fav => fav.id !== restaurantId));
   };
 
   if (favorites.length === 0) {
     return (
-      <div className="p-4 h-full flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
-          <div className="w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-            <Heart className="w-12 h-12 text-green-600" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-green-800">Nessun preferito ancora</h3>
-            <p className="text-green-600 text-sm max-w-xs">
-              Aggiungi ristoranti ai tuoi preferiti per trovarli facilmente qui
-            </p>
-          </div>
-          <Button 
-            onClick={() => navigate('/client/home')}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Esplora Ristoranti
-          </Button>
+          <Heart className="w-16 h-16 text-gray-300 mx-auto" />
+          <h2 className="text-xl font-semibold text-gray-800">Nessun preferito ancora</h2>
+          <p className="text-gray-600">Aggiungi ristoranti ai tuoi preferiti per trovarli facilmente</p>
+          <Link to="/client/home">
+            <Button className="bg-green-600 hover:bg-green-700">
+              Esplora Ristoranti
+            </Button>
+          </Link>
         </div>
       </div>
     );
@@ -81,103 +53,61 @@ const FavoritesPage = () => {
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2">
-          <Heart className="w-7 h-7 text-red-500" />
-          I Tuoi Preferiti
-        </h1>
-        <p className="text-green-600">
-          {favorites.length} ristorante{favorites.length !== 1 ? 'i' : ''} salvat{favorites.length !== 1 ? 'i' : 'o'}
-        </p>
+      <div className="text-center space-y-2">
+        <h1 className="text-2xl font-bold text-green-800">I Miei Preferiti</h1>
+        <p className="text-green-600">{favorites.length} ristoranti salvati</p>
       </div>
 
       {/* Favorites List */}
       <div className="space-y-4">
         {favorites.map((restaurant) => (
-          <Card 
-            key={restaurant.id}
-            className="overflow-hidden border-green-200 hover:shadow-lg transition-all duration-200 group"
-          >
-            <div className="relative">
-              <img
-                src={restaurant.image}
-                alt={restaurant.name}
-                className="w-full h-48 object-cover cursor-pointer group-hover:scale-105 transition-transform duration-300"
-                onClick={() => handleRestaurantClick(restaurant.id)}
-              />
-              <div className="absolute top-3 left-3 flex gap-2">
-                {restaurant.certified && (
-                  <Badge className="bg-green-600 hover:bg-green-700">
-                    <Award className="w-3 h-3 mr-1" />
-                    Certificato
-                  </Badge>
-                )}
-                {restaurant.openNow ? (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Aperto
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="bg-red-100 text-red-800">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Chiuso
-                  </Badge>
-                )}
-              </div>
-              <div className="absolute top-3 right-3 flex gap-2">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => removeFavorite(restaurant.id, restaurant.name)}
-                  className="bg-red-500 hover:bg-red-600 h-8 w-8 p-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-                <div className="bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm font-medium">{restaurant.rating}</span>
-                </div>
-              </div>
-            </div>
-
-            <CardContent className="p-4 space-y-3">
-              <div className="space-y-1">
-                <h3 
-                  className="font-semibold text-lg text-green-800 hover:text-green-600 transition-colors cursor-pointer"
-                  onClick={() => handleRestaurantClick(restaurant.id)}
-                >
-                  {restaurant.name}
-                </h3>
-                <p className="text-gray-600 text-sm">{restaurant.description}</p>
-              </div>
-
-              <div className="flex items-center justify-between text-sm text-gray-500">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1">
+          <Card key={restaurant.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start space-x-4">
+                <img
+                  src={restaurant.image}
+                  alt={restaurant.name}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Link to={`/client/restaurant/${restaurant.id}`}>
+                      <h3 className="font-semibold text-gray-900 hover:text-green-600">
+                        {restaurant.name}
+                      </h3>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFavorite(restaurant.id)}
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600">{restaurant.cuisine}</p>
+                  
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
                     <MapPin className="w-4 h-4" />
-                    {restaurant.distance}
-                  </span>
-                  <span>{restaurant.cuisine}</span>
-                  <span>{restaurant.priceRange}</span>
+                    <span>{restaurant.address}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-medium text-gray-900">{restaurant.rating}</span>
+                      </div>
+                      <span className="text-sm text-gray-500">({restaurant.reviewCount})</span>
+                    </div>
+                    <span className="text-xs text-gray-400">
+                      Aggiunto il {new Date(restaurant.addedDate).toLocaleDateString('it-IT')}
+                    </span>
+                  </div>
                 </div>
-                <span className="flex items-center gap-1">
-                  ({restaurant.reviewCount} recensioni)
-                </span>
               </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                <span className="text-sm text-gray-500">
-                  Ultima visita: {restaurant.lastVisit}
-                </span>
-                <Button
-                  size="sm"
-                  onClick={() => handleRestaurantClick(restaurant.id)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Prenota Ora
-                </Button>
-              </div>
-            </CardContent>
+            </CardHeader>
           </Card>
         ))}
       </div>
