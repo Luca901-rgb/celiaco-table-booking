@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -24,15 +23,38 @@ const AuthPage = () => {
     confirmPassword: ''
   });
 
-  // Redirect logic - now checks both user and profile
+  // Enhanced redirect logic with better debugging
   useEffect(() => {
-    if (user && profile) {
-      console.log('Redirecting user:', user, 'with profile:', profile);
-      const redirectPath = profile.type === 'client' ? '/client/home' : '/restaurant/dashboard';
-      navigate(redirectPath);
-    } else if (user && !profile && !loading) {
-      // If user exists but no profile and not loading, wait a bit more
-      console.log('User exists but no profile yet, waiting...');
+    console.log('Auth state changed:', { 
+      user: !!user, 
+      profile: !!profile, 
+      loading, 
+      userType: user?.type,
+      profileType: profile?.type 
+    });
+
+    if (user && !loading) {
+      // Use user.type if available, otherwise wait for profile
+      if (user.type) {
+        console.log('Redirecting based on user.type:', user.type);
+        const redirectPath = user.type === 'client' ? '/client/home' : '/restaurant/dashboard';
+        navigate(redirectPath);
+      } else if (profile) {
+        console.log('Redirecting based on profile.type:', profile.type);
+        const redirectPath = profile.type === 'client' ? '/client/home' : '/restaurant/dashboard';
+        navigate(redirectPath);
+      } else {
+        console.log('User exists but no type information available yet');
+        // Set a timeout to retry redirect after profile loads
+        const timeout = setTimeout(() => {
+          if (user && profile) {
+            const redirectPath = profile.type === 'client' ? '/client/home' : '/restaurant/dashboard';
+            navigate(redirectPath);
+          }
+        }, 2000);
+        
+        return () => clearTimeout(timeout);
+      }
     }
   }, [user, profile, loading, navigate]);
 
@@ -50,9 +72,11 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
+        console.log('Attempting login...');
         await login(formData.email, formData.password);
         console.log('Login successful');
       } else {
+        console.log('Attempting registration...');
         await register(formData.email, formData.password, formData.name, userType);
         console.log('Registration successful');
       }
@@ -100,14 +124,16 @@ const AuthPage = () => {
   };
 
   // Show loading state while authentication is being processed
-  if (loading && user) {
+  if (loading || (user && !user.type && !profile)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
             <Utensils className="w-8 h-8" />
           </div>
-          <p className="text-green-600">Caricamento del profilo...</p>
+          <p className="text-green-600">
+            {loading ? 'Caricamento...' : 'Caricamento del profilo...'}
+          </p>
         </div>
       </div>
     );
