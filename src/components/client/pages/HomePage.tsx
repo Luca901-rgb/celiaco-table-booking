@@ -27,10 +27,12 @@ const HomePage = () => {
   // Use useMemo to avoid infinite re-renders
   const filteredRestaurants = useMemo(() => {
     console.log('Filtering restaurants:', restaurants.length);
+    console.log('Current filters:', filters);
     let filtered = restaurants;
 
     // Search filter
     if (searchTerm) {
+      console.log('Applying search filter:', searchTerm);
       filtered = filtered.filter(restaurant =>
         restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         restaurant.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,34 +41,42 @@ const HomePage = () => {
           cuisine.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
+      console.log('After search filter:', filtered.length);
     }
 
     // Cuisine type filter
     if (filters.cuisineTypes.length > 0) {
+      console.log('Applying cuisine filter:', filters.cuisineTypes);
       filtered = filtered.filter(restaurant =>
         restaurant.cuisineType?.some(cuisine => 
           filters.cuisineTypes.includes(cuisine)
         )
       );
+      console.log('After cuisine filter:', filtered.length);
     }
 
     // Price range filter
     if (filters.priceRange) {
+      console.log('Applying price filter:', filters.priceRange);
       filtered = filtered.filter(restaurant =>
         restaurant.priceRange === filters.priceRange
       );
+      console.log('After price filter:', filtered.length);
     }
 
     // Gluten free filter
     if (filters.glutenFreeOnly) {
+      console.log('Applying gluten free filter');
       filtered = filtered.filter(restaurant =>
         restaurant.certifications?.includes('Senza Glutine') ||
         restaurant.certifications?.includes('AIC Certificato')
       );
+      console.log('After gluten free filter:', filtered.length);
     }
 
     // Distance filter (only if user location is available)
     if (userLocation && filters.distance) {
+      console.log('Applying distance filter:', filters.distance);
       filtered = filtered.filter(restaurant => {
         if (!restaurant.latitude || !restaurant.longitude) return true;
         
@@ -79,9 +89,10 @@ const HomePage = () => {
         
         return distance <= filters.distance!;
       });
+      console.log('After distance filter:', filtered.length);
     }
 
-    // Sort by distance if user location is available
+    // Sort by distance if user location is available (non elimina i ristoranti)
     if (userLocation) {
       filtered.sort((a, b) => {
         if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) return 0;
@@ -104,7 +115,7 @@ const HomePage = () => {
       });
     }
 
-    console.log('Filtered restaurants:', filtered.length);
+    console.log('Final filtered restaurants:', filtered.length);
     return filtered;
   }, [restaurants, searchTerm, filters, userLocation]);
 
