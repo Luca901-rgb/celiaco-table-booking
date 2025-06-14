@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,17 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Plus, 
-  Upload, 
-  FileText, 
   Edit3, 
   Trash2,
-  Save,
-  Eye
+  Save
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import PdfUploader from '../components/PdfUploader';
 
 const MenuManagement = () => {
-  const [menuPdf, setMenuPdf] = useState<string | null>(null);
+  const restaurantId = 'rest1'; // In produzione, questo verrà dal contesto auth
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   
@@ -85,17 +82,6 @@ const MenuManagement = () => {
     'pesce', 'crostacei', 'soia', 'sesamo', 'sedano'
   ];
 
-  const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setMenuPdf(file.name);
-      toast({
-        title: "Menù PDF caricato",
-        description: "Il file PDF è stato caricato con successo"
-      });
-    }
-  };
-
   const handleAddItem = () => {
     if (!newItem.name || !newItem.price) {
       toast({
@@ -148,7 +134,7 @@ const MenuManagement = () => {
         <p className="text-green-600">Gestisci il menù del tuo ristorante</p>
       </div>
 
-      <Tabs defaultValue="interactive" className="space-y-6">
+      <Tabs defaultValue="pdf" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pdf">Menù PDF</TabsTrigger>
           <TabsTrigger value="interactive">Menù Interattivo</TabsTrigger>
@@ -156,67 +142,7 @@ const MenuManagement = () => {
 
         {/* PDF Menu Tab */}
         <TabsContent value="pdf" className="space-y-4">
-          <Card className="border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Menù PDF
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-green-200 rounded-lg p-8 text-center">
-                {menuPdf ? (
-                  <div className="space-y-4">
-                    <FileText className="w-16 h-16 mx-auto text-green-600" />
-                    <div>
-                      <h3 className="font-medium text-green-800">{menuPdf}</h3>
-                      <p className="text-sm text-green-600">Menù PDF caricato</p>
-                    </div>
-                    <div className="flex gap-2 justify-center">
-                      <Button variant="outline" className="border-green-200 text-green-600">
-                        <Eye className="w-4 h-4 mr-2" />
-                        Visualizza
-                      </Button>
-                      <label>
-                        <input
-                          type="file"
-                          accept=".pdf"
-                          onChange={handlePdfUpload}
-                          className="hidden"
-                        />
-                        <Button variant="outline" className="border-green-200 text-green-600">
-                          <Upload className="w-4 h-4 mr-2" />
-                          Sostituisci
-                        </Button>
-                      </label>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Upload className="w-16 h-16 mx-auto text-green-600" />
-                    <div>
-                      <h3 className="font-medium text-green-800">Carica il tuo menù PDF</h3>
-                      <p className="text-sm text-green-600">
-                        Trascina il file qui o clicca per selezionarlo
-                      </p>
-                    </div>
-                    <label>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={handlePdfUpload}
-                        className="hidden"
-                      />
-                      <Button className="bg-green-600 hover:bg-green-700">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Seleziona File PDF
-                      </Button>
-                    </label>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <PdfUploader restaurantId={restaurantId} />
         </TabsContent>
 
         {/* Interactive Menu Tab */}

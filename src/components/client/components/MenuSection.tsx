@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Eye, Filter } from 'lucide-react';
 import { useRestaurantMenu } from '@/hooks/useMenu';
+import PdfViewer from './PdfViewer';
 
 interface MenuSectionProps {
   restaurantId: string;
@@ -51,34 +52,14 @@ const MenuSection = ({ restaurantId }: MenuSectionProps) => {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="interactive" className="w-full">
+      <Tabs defaultValue="pdf" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="pdf">Menù PDF</TabsTrigger>
           <TabsTrigger value="interactive">Menù Interattivo</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pdf" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-800">
-                <FileText className="w-5 h-5" />
-                Menù PDF
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center p-8 border-2 border-dashed border-green-200 rounded-lg">
-                <FileText className="w-16 h-16 mx-auto text-green-600 mb-4" />
-                <h3 className="font-medium text-green-800 mb-2">Menù Completo</h3>
-                <p className="text-sm text-green-600 mb-4">
-                  Visualizza il menù completo in formato PDF
-                </p>
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Eye className="w-4 h-4 mr-2" />
-                  Visualizza PDF
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <PdfViewer restaurantId={restaurantId} />
         </TabsContent>
 
         <TabsContent value="interactive" className="space-y-4">
