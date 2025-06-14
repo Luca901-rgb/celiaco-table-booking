@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,18 +24,11 @@ const AuthPage = () => {
     confirmPassword: ''
   });
 
-  // Redirect immediately when user is authenticated and has type
+  // Redirect when user is authenticated
   useEffect(() => {
-    console.log('AuthPage: User state:', { 
-      hasUser: !!user, 
-      userType: user?.type,
-      loading 
-    });
-
     if (user && user.type && !loading) {
-      console.log('AuthPage: Redirecting user with type:', user.type);
+      console.log('AuthPage: User authenticated, redirecting to:', user.type);
       const redirectPath = user.type === 'client' ? '/client/home' : '/restaurant/dashboard';
-      console.log('AuthPage: Redirecting to:', redirectPath);
       navigate(redirectPath, { replace: true });
     }
   }, [user, loading, navigate]);
@@ -102,8 +96,8 @@ const AuthPage = () => {
     });
   };
 
-  // Show loading state while authentication is being processed
-  if (loading) {
+  // Show loading state only when actually loading
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -116,18 +110,9 @@ const AuthPage = () => {
     );
   }
 
-  // Don't render the form if user is authenticated (prevent flash)
+  // Don't render the form if user is already authenticated
   if (user && user.type) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
-            <Utensils className="w-8 h-8" />
-          </div>
-          <p className="text-green-600">Reindirizzamento in corso...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

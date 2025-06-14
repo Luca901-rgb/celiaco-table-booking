@@ -33,22 +33,22 @@ export const useAuth = () => {
   return context;
 };
 
-const mapProfileToAppUser = (profile: UserProfile): ClientProfile | RestaurantProfile => {
+const createDefaultProfile = (user: User, userType: 'client' | 'restaurant'): ClientProfile | RestaurantProfile => {
   const baseProfile = {
-    id: profile.id,
-    email: profile.email,
-    name: `${profile.first_name} ${profile.last_name}`.trim(),
-    type: profile.user_type as 'client' | 'restaurant',
-    profileComplete: true,
+    id: user.id,
+    email: user.email || '',
+    name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+    type: userType,
+    profileComplete: false,
     createdAt: new Date()
   };
 
-  if (profile.user_type === 'restaurant') {
+  if (userType === 'restaurant') {
     return {
       ...baseProfile,
       type: 'restaurant',
-      address: profile.address || '',
-      phone: profile.phone || '',
+      address: '',
+      phone: '',
       description: '',
       website: '',
       coverImage: '',
@@ -63,8 +63,8 @@ const mapProfileToAppUser = (profile: UserProfile): ClientProfile | RestaurantPr
     return {
       ...baseProfile,
       type: 'client',
-      phone: profile.phone,
-      address: profile.address,
+      phone: '',
+      address: '',
       allergies: [],
       favoriteRestaurants: []
     } as ClientProfile;
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<ClientProfile | RestaurantProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string): Promise<ClientProfile | RestaurantProfile | null> => {
     try {
       console.log('Loading user profile for:', userId);
       const { data: userProfile, error } = await supabase
@@ -93,14 +93,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (userProfile) {
         console.log('User profile loaded:', userProfile);
-        const typedProfile = {
-          ...userProfile,
-          user_type: userProfile.user_type as 'client' | 'restaurant'
-        } as UserProfile;
-        
-        const mappedProfile = mapProfileToAppUser(typedProfile);
-        console.log('Mapped profile:', mappedProfile);
-        return mappedProfile;
+        const baseProfile = {
+          id: userProfile.id,
+          email: userProfile.email,
+          name: `${userProfile.first_name} ${userProfile.last_name}`.trim(),
+          type: userProfile.user_type as 'client' | 'restaurant',
+          profileComplete: true,
+          createdAt: new Date()
+        };
+
+        if (userProfile.user_type === 'restaurant') {
+          return {
+            ...baseProfile,
+            type: 'restaurant',
+            address: userProfile.address || '',
+            phone: userProfile.phone || '',
+            description: '',
+            website: '',
+            coverImage: '',
+            openingHours: {},
+            certifications: [],
+            cuisineType: [],
+            priceRange: 'medium',
+            latitude: 0,
+            longitude: 0
+          } as RestaurantProfile;
+        } else {
+          return {
+            ...baseProfile,
+            type: 'client',
+            phone: userProfile.phone,
+            address: userProfile.address,
+            allergies: [],
+            favoriteRestaurants: []
+          } as ClientProfile;
+        }
       }
       
       return null;
@@ -113,34 +140,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('Setting up auth state listener...');
     
-    // Check for existing session first
     const initializeAuth = async () => {
-      console.log('Checking for existing session...');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        console.log('Existing session found, setting session and user immediately');
-        setSession(session);
+      try {
+        console.log('Checking for existing session...');
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Set basic user info immediately to unblock UI
-        setUser({
-          ...session.user,
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-          type: session.user.user_metadata?.user_type || 'client'
-        });
-        
-        // Then load full profile
-        const userProfile = await loadUserProfile(session.user.id);
-        if (userProfile) {
-          setProfile(userProfile);
-          setUser(prev => ({
-            ...prev!,
-            name: userProfile.name,
-            type: userProfile.type
-          }));
+        if (session?.user) {
+          console.log('Existing session found:', session.user.id);
+          setSession(session);
+          
+          // Imposta immediatamente l'utente con i dati di base
+          const basicUser: AppUser = {
+            ...session.user,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            type: session.user.user_metadata?.user_type || 'client'
+          };
+          setUser(basicUser);
+          
+          // Prova a caricare il profilo completo, ma non bloccare l'app se fallisce
+          try {
+            const userProfile = await loadUserProfile(session.user.id);
+            if (userProfile) {
+              setProfile(userProfile);
+              setUser(prev => ({
+                ...prev!,
+                name: userProfile.name,
+                type: userProfile.type
+              }));
+            } else {
+              // Crea un profilo di default se non esiste
+              const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+              setProfile(defaultProfile);
+            }
+          } catch (profileError) {
+            console.error('Error loading profile, using default:', profileError);
+            const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+            setProfile(defaultProfile);
+          }
         }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeAuth();
@@ -152,29 +194,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          if (event === 'SIGNED_IN') {
-            console.log('User signed in, setting user immediately');
-            setLoading(true);
-            
-            // Set basic user info immediately
-            setUser({
-              ...session.user,
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
-              type: session.user.user_metadata?.user_type || 'client'
-            });
-            
-            // Then load full profile
-            const userProfile = await loadUserProfile(session.user.id);
-            if (userProfile) {
-              setProfile(userProfile);
-              setUser(prev => ({
-                ...prev!,
-                name: userProfile.name,
-                type: userProfile.type
-              }));
+          console.log('User signed in:', session.user.id);
+          
+          // Imposta immediatamente l'utente
+          const basicUser: AppUser = {
+            ...session.user,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+            type: session.user.user_metadata?.user_type || 'client'
+          };
+          setUser(basicUser);
+          
+          // Carica il profilo in background
+          setTimeout(async () => {
+            try {
+              const userProfile = await loadUserProfile(session.user.id);
+              if (userProfile) {
+                setProfile(userProfile);
+                setUser(prev => ({
+                  ...prev!,
+                  name: userProfile.name,
+                  type: userProfile.type
+                }));
+              } else {
+                const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+                setProfile(defaultProfile);
+              }
+            } catch (error) {
+              console.error('Error loading profile in background:', error);
+              const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+              setProfile(defaultProfile);
             }
-            setLoading(false);
-          }
+          }, 100);
+          
+          setLoading(false);
         } else {
           console.log('User signed out');
           setUser(null);
