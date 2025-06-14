@@ -1,8 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   User as FirebaseUser
@@ -15,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   profile: ClientProfile | RestaurantProfile | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string, type: 'client' | 'restaurant') => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -67,6 +69,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const { user: firebaseUser } = await signInWithPopup(auth, provider);
+      
+      // Controlla se l'utente esiste già
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (!userDoc.exists()) {
+        // Nuovo utente - crea profilo di default come client
+        const userData: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email!,
+          name: firebaseUser.displayName || 'Utente',
+          type: 'client',
+          profileComplete: true,
+          createdAt: new Date()
+        };
+
+        await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+
+        const profileData: ClientProfile = {
+          ...userData,
+          favoriteRestaurants: []
+        };
+
+        await setDoc(doc(db, 'clients', firebaseUser.uid), profileData);
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -148,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       profile, 
       login, 
+      loginWithGoogle,
       register, 
       logout, 
       loading, 
