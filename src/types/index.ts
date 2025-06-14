@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   email: string;
@@ -27,6 +26,8 @@ export interface RestaurantProfile extends User {
   priceRange?: 'low' | 'medium' | 'high';
   latitude?: number;
   longitude?: number;
+  average_rating?: number;
+  total_reviews?: number;
 }
 
 export interface OpeningHours {
