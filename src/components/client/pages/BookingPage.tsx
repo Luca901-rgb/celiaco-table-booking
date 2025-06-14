@@ -1,61 +1,54 @@
 
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRestaurant } from '@/hooks/useRestaurants';
-import { useCreateBooking } from '@/hooks/useBookings';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft, Calendar, Clock, Users, MessageSquare, Check } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Clock, Users, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
-import { it } from 'date-fns/locale';
-import { ClientProfile } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRestaurant } from '@/hooks/useRestaurants';
+import { useCreateBooking } from '@/hooks/useBookings';
+import { QRCodeDisplay } from '../components/QRCodeDisplay';
 
 const BookingPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const clientProfile = profile as ClientProfile;
-  
+  const { user } = useAuth();
   const { data: restaurant, isLoading } = useRestaurant(id!);
   const createBooking = useCreateBooking();
   
-  const [selectedDate, setSelectedDate] = useState<Date>();
-  const [selectedTime, setSelectedTime] = useState('');
-  const [guests, setGuests] = useState(2);
-  const [specialRequests, setSpecialRequests] = useState('');
-
-  const timeSlots = [
-    '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00', '22:30'
-  ];
+  const [bookingData, setBookingData] = useState({
+    date: '',
+    time: '',
+    guests: 2,
+    specialRequests: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedDate || !selectedTime || !user || !restaurant) {
-      return;
-    }
+    if (!user || !restaurant) return;
 
+    setIsSubmitting(true);
     try {
-      await createBooking.mutateAsync({
+      const booking = await createBooking.mutateAsync({
         clientId: user.id,
         restaurantId: restaurant.id,
-        date: selectedDate,
-        time: selectedTime,
-        guests,
-        specialRequests: specialRequests || undefined,
+        date: new Date(bookingData.date),
+        time: bookingData.time,
+        guests: bookingData.guests,
+        specialRequests: bookingData.specialRequests,
         status: 'pending'
       });
       
-      navigate('/client/profile');
+      setConfirmedBooking(booking);
     } catch (error) {
-      console.error('Errore nella prenotazione:', error);
+      console.error('Errore creazione prenotazione:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,171 +68,158 @@ const BookingPage = () => {
     );
   }
 
+  // Se la prenotazione è stata confermata, mostra la conferma con QR Code
+  if (confirmedBooking) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-md mx-auto space-y-6">
+          {/* Header */}
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Check className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-green-800 mb-2">
+              Prenotazione Inviata!
+            </h1>
+            <p className="text-green-600">
+              La tua richiesta è stata inviata a {restaurant.name}
+            </p>
+          </div>
+
+          {/* QR Code Display */}
+          <QRCodeDisplay 
+            booking={confirmedBooking} 
+            restaurantName={restaurant.name}
+          />
+
+          {/* Azioni */}
+          <div className="space-y-3">
+            <Link to="/client/profile" className="block">
+              <Button className="w-full bg-green-600 hover:bg-green-700">
+                Visualizza nel Profilo
+              </Button>
+            </Link>
+            <Link to="/client/home" className="block">
+              <Button variant="outline" className="w-full">
+                Torna alla Home
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 space-y-6 pb-20">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-green-800">Prenota un tavolo</h1>
-        <p className="text-green-600">{restaurant.name}</p>
-        <p className="text-sm text-gray-600">{restaurant.address}</p>
+      <div className="bg-white shadow-sm p-4">
+        <div className="flex items-center gap-4">
+          <Link to={`/client/restaurant/${id}`}>
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold text-green-800">Prenota un Tavolo</h1>
+            <p className="text-green-600">{restaurant.name}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Allergen Alert */}
-      {clientProfile?.allergies && clientProfile.allergies.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-yellow-800 mb-2">
-                  Le tue allergie registrate:
-                </h3>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {clientProfile.allergies.map((allergy) => (
-                    <span
-                      key={allergy}
-                      className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm"
-                    >
-                      {allergy}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-sm text-yellow-700">
-                  Inserisci le tue allergie nelle richieste speciali per informare il ristorante.
-                </p>
+      {/* Form */}
+      <div className="p-4">
+        <Card className="border-green-200">
+          <CardHeader>
+            <CardTitle className="text-green-800">Dettagli Prenotazione</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Data */}
+              <div className="space-y-2">
+                <Label htmlFor="date" className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
+                  Data
+                </Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={bookingData.date}
+                  onChange={(e) => setBookingData({...bookingData, date: e.target.value})}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
               </div>
-            </div>
+
+              {/* Orario */}
+              <div className="space-y-2">
+                <Label htmlFor="time" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Orario
+                </Label>
+                <Input
+                  id="time"
+                  type="time"
+                  value={bookingData.time}
+                  onChange={(e) => setBookingData({...bookingData, time: e.target.value})}
+                  required
+                />
+              </div>
+
+              {/* Numero ospiti */}
+              <div className="space-y-2">
+                <Label htmlFor="guests" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Numero di persone
+                </Label>
+                <Input
+                  id="guests"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={bookingData.guests}
+                  onChange={(e) => setBookingData({...bookingData, guests: parseInt(e.target.value)})}
+                  required
+                />
+              </div>
+
+              {/* Richieste speciali */}
+              <div className="space-y-2">
+                <Label htmlFor="requests" className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Richieste speciali (opzionale)
+                </Label>
+                <Textarea
+                  id="requests"
+                  placeholder="Es: allergie, posizione tavolo, occasione speciale..."
+                  value={bookingData.specialRequests}
+                  onChange={(e) => setBookingData({...bookingData, specialRequests: e.target.value})}
+                />
+              </div>
+
+              {/* Note informative */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-medium text-green-800 mb-2">Informazioni importanti:</h3>
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>• La prenotazione deve essere confermata dal ristorante</li>
+                  <li>• Riceverai un QR Code dopo la conferma</li>
+                  <li>• Mostra il QR Code al tuo arrivo</li>
+                  <li>• Informa sempre il personale delle tue allergie</li>
+                </ul>
+              </div>
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Invio in corso...' : 'Invia Prenotazione'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
-      )}
-
-      {/* Booking Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dettagli Prenotazione</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Date Selection */}
-            <div className="space-y-2">
-              <Label>Data</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? (
-                      format(selectedDate, 'PPP', { locale: it })
-                    ) : (
-                      <span>Seleziona una data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time Selection */}
-            <div className="space-y-2">
-              <Label>Orario</Label>
-              <Select value={selectedTime} onValueChange={setSelectedTime}>
-                <SelectTrigger>
-                  <Clock className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Seleziona un orario" />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeSlots.map((time) => (
-                    <SelectItem key={time} value={time}>
-                      {time}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Number of Guests */}
-            <div className="space-y-2">
-              <Label htmlFor="guests">Numero di persone</Label>
-              <Select value={guests.toString()} onValueChange={(value) => setGuests(Number(value))}>
-                <SelectTrigger>
-                  <Users className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? 'persona' : 'persone'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Special Requests */}
-            <div className="space-y-2">
-              <Label htmlFor="requests">Richieste speciali</Label>
-              <Textarea
-                id="requests"
-                placeholder="Allergie, intolleranze, preferenze per il tavolo..."
-                value={specialRequests}
-                onChange={(e) => setSpecialRequests(e.target.value)}
-                rows={3}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700"
-              disabled={!selectedDate || !selectedTime || createBooking.isPending}
-            >
-              {createBooking.isPending ? 'Prenotazione in corso...' : 'Conferma Prenotazione'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Restaurant Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informazioni Ristorante</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-gray-600">{restaurant.description}</p>
-          
-          {restaurant.certifications && restaurant.certifications.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-2">Certificazioni:</h4>
-              <div className="flex flex-wrap gap-2">
-                {restaurant.certifications.map((cert) => (
-                  <span
-                    key={cert}
-                    className="bg-green-100 text-green-800 px-2 py-1 rounded text-sm"
-                  >
-                    {cert}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {restaurant.phone && (
-            <p className="text-sm">
-              <strong>Telefono:</strong> {restaurant.phone}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 };

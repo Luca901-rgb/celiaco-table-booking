@@ -14,6 +14,7 @@ interface QRScannerProps {
 export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
   const [manualCode, setManualCode] = useState('');
   const [scanMode, setScanMode] = useState<'camera' | 'manual'>('manual');
+  const [scanResult, setScanResult] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -58,8 +59,14 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
 
   const handleManualSubmit = () => {
     if (manualCode.trim()) {
-      onScan(manualCode.trim());
-      setManualCode('');
+      // Valida il formato del QR code
+      if (manualCode.includes('booking-') || manualCode.startsWith('{')) {
+        onScan(manualCode.trim());
+        setManualCode('');
+        setScanResult('✅ QR Code valido - Prenotazione trovata!');
+      } else {
+        setScanResult('❌ QR Code non valido');
+      }
     }
   };
 
@@ -72,7 +79,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-green-800">Scanner QR</CardTitle>
+          <CardTitle className="text-green-800">Scanner QR Prenotazione</CardTitle>
           <Button
             variant="ghost"
             size="sm"
@@ -115,7 +122,7 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                 className="w-full h-64 bg-gray-100 rounded-lg"
               />
               <p className="text-sm text-gray-600 text-center">
-                Inquadra il QR code della prenotazione
+                Inquadra il QR code della prenotazione del cliente
               </p>
             </div>
           )}
@@ -130,10 +137,22 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
                 <Input
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value)}
-                  placeholder="Inserisci il codice QR..."
+                  placeholder="booking-1234567890-rest1-client1..."
                   onKeyPress={(e) => e.key === 'Enter' && handleManualSubmit()}
                 />
               </div>
+              
+              {/* Risultato scansione */}
+              {scanResult && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  scanResult.includes('✅') 
+                    ? 'bg-green-50 text-green-800' 
+                    : 'bg-red-50 text-red-800'
+                }`}>
+                  {scanResult}
+                </div>
+              )}
+              
               <Button
                 onClick={handleManualSubmit}
                 disabled={!manualCode.trim()}
@@ -145,7 +164,8 @@ export const QRScanner = ({ onScan, onClose }: QRScannerProps) => {
           )}
 
           <div className="text-xs text-gray-500 text-center">
-            Scansiona o inserisci il codice QR per confermare l'arrivo del cliente
+            Scansiona o inserisci il codice QR per confermare l'arrivo del cliente.
+            Dopo la scansione il cliente potrà lasciare una recensione.
           </div>
         </CardContent>
       </Card>

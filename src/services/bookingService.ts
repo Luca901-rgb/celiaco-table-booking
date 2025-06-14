@@ -1,66 +1,90 @@
 
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  orderBy
-} from 'firebase/firestore';
-import { db } from '@/config/firebase';
 import { Booking } from '@/types';
 
-export const bookingService = {
-  // Crea una nuova prenotazione
-  async createBooking(booking: Omit<Booking, 'id' | 'createdAt' | 'qrCode'>): Promise<string> {
-    const bookingData = {
-      ...booking,
-      createdAt: new Date(),
-      qrCode: generateQRCode()
-    };
-    const docRef = await addDoc(collection(db, 'bookings'), bookingData);
-    return docRef.id;
+// Mock data per simulare il backend
+let bookings: Booking[] = [
+  {
+    id: '1',
+    clientId: 'client1',
+    restaurantId: 'rest1',
+    date: new Date('2024-06-20'),
+    time: '19:30',
+    guests: 2,
+    status: 'confirmed',
+    specialRequests: 'Tavolo vicino alla finestra',
+    qrCode: 'booking-qr-1-rest1-client1-1718899800000',
+    createdAt: new Date('2024-06-15')
   },
-
-  // Ottieni prenotazioni del cliente
-  async getClientBookings(clientId: string): Promise<Booking[]> {
-    const q = query(
-      collection(db, 'bookings'),
-      where('clientId', '==', clientId),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-  },
-
-  // Ottieni prenotazioni del ristorante
-  async getRestaurantBookings(restaurantId: string): Promise<Booking[]> {
-    const q = query(
-      collection(db, 'bookings'),
-      where('restaurantId', '==', restaurantId),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
-  },
-
-  // Aggiorna stato prenotazione
-  async updateBookingStatus(bookingId: string, status: Booking['status']): Promise<void> {
-    await updateDoc(doc(db, 'bookings', bookingId), { status });
-  },
-
-  // Ottieni prenotazione per ID
-  async getBookingById(id: string): Promise<Booking | null> {
-    const docRef = doc(db, 'bookings', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Booking : null;
+  {
+    id: '2',
+    clientId: 'client1',
+    restaurantId: 'rest2',
+    date: new Date('2024-06-22'),
+    time: '20:00',
+    guests: 4,
+    status: 'pending',
+    specialRequests: 'Allergia ai crostacei',
+    qrCode: '',
+    createdAt: new Date('2024-06-16')
   }
+];
+
+const generateBookingQRData = (booking: Omit<Booking, 'id' | 'qrCode' | 'createdAt'>): string => {
+  return `booking-${Date.now()}-${booking.restaurantId}-${booking.clientId}-${booking.date.getTime()}`;
 };
 
-// Genera un codice QR semplice (in produzione useresti una libreria dedicata)
-function generateQRCode(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-}
+export const bookingService = {
+  getClientBookings: async (clientId: string): Promise<Booking[]> => {
+    // Simula ritardo API
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return bookings.filter(booking => booking.clientId === clientId);
+  },
+
+  getRestaurantBookings: async (restaurantId: string): Promise<Booking[]> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return bookings.filter(booking => booking.restaurantId === restaurantId);
+  },
+
+  createBooking: async (bookingData: Omit<Booking, 'id' | 'qrCode' | 'createdAt'>): Promise<Booking> => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const newBooking: Booking = {
+      ...bookingData,
+      id: `booking-${Date.now()}`,
+      qrCode: generateBookingQRData(bookingData),
+      createdAt: new Date(),
+      status: 'pending'
+    };
+    
+    bookings.push(newBooking);
+    return newBooking;
+  },
+
+  updateBookingStatus: async (bookingId: string, status: Booking['status']): Promise<Booking> => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) {
+      throw new Error('Prenotazione non trovata');
+    }
+    
+    booking.status = status;
+    
+    // Se la prenotazione viene confermata e non ha ancora un QR code, lo generiamo
+    if (status === 'confirmed' && !booking.qrCode) {
+      booking.qrCode = generateBookingQRData(booking);
+    }
+    
+    return booking;
+  },
+
+  getBookingById: async (bookingId: string): Promise<Booking | null> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return bookings.find(booking => booking.id === bookingId) || null;
+  },
+
+  getBookingByQRCode: async (qrCode: string): Promise<Booking | null> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return bookings.find(booking => booking.qrCode === qrCode) || null;
+  }
+};
