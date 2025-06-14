@@ -7,6 +7,7 @@ import MapPage from './pages/MapPage';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
 import RestaurantDetail from './pages/RestaurantDetail';
+import BookingPage from './pages/BookingPage';
 
 const ClientApp = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const ClientApp = () => {
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/restaurant/:id" element={<RestaurantDetail />} />
+        <Route path="/restaurant/:id/book" element={<BookingPage />} />
         <Route path="*" element={<Navigate to="/client/home" replace />} />
       </Routes>
     </ClientLayout>

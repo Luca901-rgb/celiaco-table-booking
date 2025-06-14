@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, MapPin, Clock, Phone, Heart } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Heart, Calendar } from 'lucide-react';
 import { RestaurantProfile } from '@/types';
 import { Link } from 'react-router-dom';
 
@@ -143,12 +143,20 @@ export const RestaurantCard = ({
           )}
         </div>
 
-        {/* Action Button */}
-        <Link to={`/client/restaurant/${restaurant.id}`}>
-          <Button className="w-full bg-green-600 hover:bg-green-700">
-            Visualizza Dettagli
-          </Button>
-        </Link>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Link to={`/client/restaurant/${restaurant.id}`} className="flex-1">
+            <Button variant="outline" className="w-full">
+              Visualizza Dettagli
+            </Button>
+          </Link>
+          <Link to={`/client/restaurant/${restaurant.id}/book`} className="flex-1">
+            <Button className="w-full bg-green-600 hover:bg-green-700">
+              <Calendar className="w-4 h-4 mr-2" />
+              Prenota
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
