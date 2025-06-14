@@ -44,15 +44,20 @@ const MediaManagement = () => {
       Array.from(files).forEach((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          addPhotoMutation.mutate({
-            url: e.target?.result as string,
-            category: 'piatti',
-            name: file.name.split('.')[0],
-            uploadedAt: new Date()
-          });
+          const result = e.target?.result as string;
+          if (result) {
+            addPhotoMutation.mutate({
+              url: result,
+              category: 'piatti',
+              name: file.name.split('.')[0],
+              uploadedAt: new Date()
+            });
+          }
         };
         reader.readAsDataURL(file);
       });
+      // Reset input value to allow same file to be selected again
+      e.target.value = '';
     }
   };
 
@@ -60,8 +65,9 @@ const MediaManagement = () => {
     const files = e.target.files;
     if (files) {
       Array.from(files).forEach((file) => {
+        const videoUrl = URL.createObjectURL(file);
         addVideoMutation.mutate({
-          url: URL.createObjectURL(file),
+          url: videoUrl,
           thumbnail: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
           name: file.name.split('.')[0],
           duration: '0:00',
@@ -69,6 +75,8 @@ const MediaManagement = () => {
           uploadedAt: new Date()
         });
       });
+      // Reset input value to allow same file to be selected again
+      e.target.value = '';
     }
   };
 
@@ -156,11 +164,17 @@ const MediaManagement = () => {
                         <img
                           src={photo.url}
                           alt={photo.name}
-                          className="w-full h-24 md:h-32 object-cover rounded-lg"
+                          className="w-full h-24 md:h-32 object-cover rounded-lg cursor-pointer"
                           loading="lazy"
+                          onClick={() => window.open(photo.url, '_blank')}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1 md:gap-2">
-                          <Button size="sm" variant="secondary" className="text-xs md:text-sm">
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            className="text-xs md:text-sm"
+                            onClick={() => window.open(photo.url, '_blank')}
+                          >
                             <Eye className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                           <Button
