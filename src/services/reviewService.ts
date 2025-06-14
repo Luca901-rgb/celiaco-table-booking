@@ -53,5 +53,10 @@ export const reviewService = {
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const average = totalRating / reviews.length;
     return { average, count: reviews.length };
+  },
+
+  // Alias per compatibilità
+  async getRestaurantRating(restaurantId: string): Promise<{ average: number; count: number }> {
+    return this.getAverageRating(restaurantId);
   }
 };

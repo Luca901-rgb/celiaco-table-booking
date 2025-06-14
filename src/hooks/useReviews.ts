@@ -12,10 +12,10 @@ export const useRestaurantReviews = (restaurantId: string) => {
   });
 };
 
-export const useRestaurantRating = (restaurantId: string) => {
+export const useAverageRating = (restaurantId: string) => {
   return useQuery({
     queryKey: ['rating', restaurantId],
-    queryFn: () => reviewService.getRestaurantRating(restaurantId),
+    queryFn: () => reviewService.getAverageRating(restaurantId),
     enabled: !!restaurantId,
   });
 };
