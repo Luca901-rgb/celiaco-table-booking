@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import RestaurantLayout from './RestaurantLayout';
+import RestaurantOnboarding from './onboarding/RestaurantOnboarding';
 import DashboardPage from './pages/DashboardPage';
 import ProfileManagement from './pages/ProfileManagement';
 import MenuManagement from './pages/MenuManagement';
@@ -10,10 +11,15 @@ import BookingManagement from './pages/BookingManagement';
 import ReviewsManagement from './pages/ReviewsManagement';
 
 const RestaurantApp = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   if (!user || user.type !== 'restaurant') {
     return <Navigate to="/" replace />;
+  }
+
+  // Se il profilo non è completo, mostra l'onboarding
+  if (!profile?.profileComplete) {
+    return <RestaurantOnboarding />;
   }
 
   return (

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { RestaurantProfile } from '@/types';
 import { DatabaseRestaurant } from '@/types/supabase';
@@ -56,6 +55,63 @@ export const restaurantService = {
     
     if (error) throw error;
     return (data || []).map(mapDatabaseToRestaurant);
+  },
+
+  async createRestaurantFromOnboarding(restaurantData: {
+    name: string;
+    description: string;
+    address: string;
+    city: string;
+    phone: string;
+    email: string;
+    website: string;
+    category: string;
+    cuisineTypes: string[];
+    latitude?: number;
+    longitude?: number;
+  }, ownerId: string): Promise<RestaurantProfile> {
+    const dbRestaurant = {
+      name: restaurantData.name,
+      description: restaurantData.description,
+      address: restaurantData.address,
+      city: restaurantData.city,
+      phone: restaurantData.phone,
+      email: restaurantData.email,
+      website: restaurantData.website || null,
+      category: restaurantData.category,
+      latitude: restaurantData.latitude || null,
+      longitude: restaurantData.longitude || null,
+      owner_id: ownerId,
+      is_active: true
+    };
+
+    const { data, error } = await supabase
+      .from('restaurants')
+      .insert(dbRestaurant)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating restaurant:', error);
+      throw error;
+    }
+
+    // Aggiorna il profilo utente per segnalare che è completo
+    const { error: profileError } = await supabase
+      .from('userprofiles')
+      .update({ 
+        address: restaurantData.address,
+        city: restaurantData.city,
+        phone: restaurantData.phone
+      })
+      .eq('user_id', ownerId);
+
+    if (profileError) {
+      console.error('Error updating user profile:', profileError);
+      // Non blocchiamo per questo errore
+    }
+
+    return mapDatabaseToRestaurant(data);
   },
 
   async createRestaurant(restaurant: Omit<RestaurantProfile, 'id'>): Promise<RestaurantProfile> {
