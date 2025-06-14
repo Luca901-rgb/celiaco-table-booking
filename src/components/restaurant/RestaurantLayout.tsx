@@ -30,9 +30,9 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
 
   const navItems = [
     { path: '/restaurant/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/restaurant/profile', icon: Settings, label: 'Profilo Ristorante' },
-    { path: '/restaurant/menu', icon: Menu, label: 'Gestione Menù' },
-    { path: '/restaurant/media', icon: Image, label: 'Foto e Video' },
+    { path: '/restaurant/profile', icon: Settings, label: 'Profilo' },
+    { path: '/restaurant/menu', icon: Menu, label: 'Menù' },
+    { path: '/restaurant/media', icon: Image, label: 'Media' },
     { path: '/restaurant/bookings', icon: Calendar, label: 'Prenotazioni' },
     { path: '/restaurant/reviews', icon: Star, label: 'Recensioni' }
   ];
@@ -40,10 +40,10 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-amber-50 flex">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-amber-50 flex flex-col md:flex-row">
+      {/* Desktop Sidebar - Hidden on mobile */}
       <div className={cn(
-        "bg-white border-r border-green-200 shadow-lg transition-all duration-300 flex flex-col",
+        "hidden md:flex bg-white border-r border-green-200 shadow-lg transition-all duration-300 flex-col",
         sidebarCollapsed ? "w-16" : "w-64"
       )}>
         {/* Header */}
@@ -109,8 +109,44 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto pb-20 md:pb-0">
         {children}
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-green-200 shadow-lg">
+        <div className="grid grid-cols-6 gap-1 p-2">
+          {navItems.map(({ path, icon: Icon, label }) => (
+            <Button
+              key={path}
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(path)}
+              className={cn(
+                "flex flex-col items-center justify-center h-12 px-1 py-1 transition-all duration-200",
+                isActive(path)
+                  ? "bg-green-100 text-green-700"
+                  : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+              )}
+            >
+              <Icon className="w-4 h-4 mb-1" />
+              <span className="text-xs font-medium leading-tight">{label.split(' ')[0]}</span>
+            </Button>
+          ))}
+        </div>
+        
+        {/* Logout button for mobile */}
+        <div className="border-t border-green-200 p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="text-sm font-medium">Disconnetti</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
