@@ -9,6 +9,7 @@ import { useRestaurant } from '@/hooks/useRestaurants';
 import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
 import { ReviewsList } from '../components/ReviewsList';
 import MenuSection from '../components/MenuSection';
+import RestaurantGallery from '../components/RestaurantGallery';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -136,14 +137,19 @@ const RestaurantDetail = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="menu" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="menu">Menù</TabsTrigger>
+            <TabsTrigger value="gallery">Gallery</TabsTrigger>
             <TabsTrigger value="reviews">Recensioni</TabsTrigger>
             <TabsTrigger value="info">Informazioni</TabsTrigger>
           </TabsList>
           
           <TabsContent value="menu" className="space-y-4">
             <MenuSection restaurantId={id!} />
+          </TabsContent>
+          
+          <TabsContent value="gallery" className="space-y-4">
+            <RestaurantGallery restaurantId={id!} />
           </TabsContent>
           
           <TabsContent value="reviews" className="space-y-4">

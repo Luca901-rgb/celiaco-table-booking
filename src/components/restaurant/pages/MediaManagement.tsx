@@ -10,54 +10,29 @@ import {
   Video, 
   Trash2,
   Eye,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { 
+  useRestaurantPhotos, 
+  useRestaurantVideos, 
+  useAddPhoto, 
+  useDeletePhoto,
+  useAddVideo,
+  useDeleteVideo
+} from '@/hooks/useRestaurantMedia';
 
 const MediaManagement = () => {
-  const [photos, setPhotos] = useState([
-    {
-      id: '1',
-      url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
-      category: 'ambiente',
-      name: 'Sala principale'
-    },
-    {
-      id: '2',
-      url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-      category: 'piatti',
-      name: 'Pizza senza glutine'
-    },
-    {
-      id: '3',
-      url: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
-      category: 'piatti',
-      name: 'Pasta alla carbonara'
-    },
-    {
-      id: '4',
-      url: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop',
-      category: 'ambiente',
-      name: 'Cucina a vista'
-    }
-  ]);
+  const restaurantId = 'rest1'; // In produzione, questo verrà dal contesto auth
 
-  const [videos, setVideos] = useState([
-    {
-      id: '1',
-      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
-      thumbnail: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-      name: 'Presentazione ristorante',
-      duration: '2:30'
-    },
-    {
-      id: '2',
-      url: 'https://www.w3schools.com/html/movie.mp4',
-      thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop',
-      name: 'Preparazione pizza',
-      duration: '1:45'
-    }
-  ]);
+  const { data: photos = [], isLoading: photosLoading } = useRestaurantPhotos(restaurantId);
+  const { data: videos = [], isLoading: videosLoading } = useRestaurantVideos(restaurantId);
+  
+  const addPhotoMutation = useAddPhoto();
+  const deletePhotoMutation = useDeletePhoto();
+  const addVideoMutation = useAddVideo();
+  const deleteVideoMutation = useDeleteVideo();
 
   const categories = ['ambiente', 'piatti', 'staff', 'esterni'];
 
@@ -67,19 +42,13 @@ const MediaManagement = () => {
       Array.from(files).forEach((file) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const newPhoto = {
-            id: Date.now().toString() + Math.random(),
+          addPhotoMutation.mutate({
             url: e.target?.result as string,
             category: 'piatti',
             name: file.name.split('.')[0]
-          };
-          setPhotos(prev => [...prev, newPhoto]);
+          });
         };
         reader.readAsDataURL(file);
-      });
-      toast({
-        title: "Foto caricate",
-        description: "Le foto sono state aggiunte alla gallery"
       });
     }
   };
@@ -88,41 +57,28 @@ const MediaManagement = () => {
     const files = e.target.files;
     if (files) {
       Array.from(files).forEach((file) => {
-        const newVideo = {
-          id: Date.now().toString() + Math.random(),
+        addVideoMutation.mutate({
           url: URL.createObjectURL(file),
           thumbnail: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
           name: file.name.split('.')[0],
           duration: '0:00'
-        };
-        setVideos(prev => [...prev, newVideo]);
-      });
-      toast({
-        title: "Video caricati",
-        description: "I video sono stati aggiunti alla gallery"
+        });
       });
     }
-  };
-
-  const handleDeletePhoto = (id: string) => {
-    setPhotos(photos.filter(photo => photo.id !== id));
-    toast({
-      title: "Foto eliminata",
-      description: "La foto è stata rimossa dalla gallery"
-    });
-  };
-
-  const handleDeleteVideo = (id: string) => {
-    setVideos(videos.filter(video => video.id !== id));
-    toast({
-      title: "Video eliminato",
-      description: "Il video è stato rimosso dalla gallery"
-    });
   };
 
   const getPhotosByCategory = (category: string) => {
     return photos.filter(photo => photo.category === category);
   };
+
+  if (photosLoading || videosLoading) {
+    return (
+      <div className="p-6 text-center">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-green-600" />
+        <p className="text-green-600 mt-2">Caricamento...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -134,8 +90,8 @@ const MediaManagement = () => {
 
       <Tabs defaultValue="photos" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="photos">Foto Gallery</TabsTrigger>
-          <TabsTrigger value="videos">Video Gallery</TabsTrigger>
+          <TabsTrigger value="photos">Foto Gallery ({photos.length})</TabsTrigger>
+          <TabsTrigger value="videos">Video Gallery ({videos.length})</TabsTrigger>
         </TabsList>
 
         {/* Photos Tab */}
@@ -149,9 +105,17 @@ const MediaManagement = () => {
                 multiple
                 onChange={handlePhotoUpload}
                 className="hidden"
+                disabled={addPhotoMutation.isPending}
               />
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={addPhotoMutation.isPending}
+              >
+                {addPhotoMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
                 Aggiungi Foto
               </Button>
             </label>
@@ -178,6 +142,7 @@ const MediaManagement = () => {
                           src={photo.url}
                           alt={photo.name}
                           className="w-full h-32 object-cover rounded-lg"
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
                           <Button size="sm" variant="secondary">
@@ -186,9 +151,14 @@ const MediaManagement = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => handleDeletePhoto(photo.id)}
+                            onClick={() => deletePhotoMutation.mutate(photo.id)}
+                            disabled={deletePhotoMutation.isPending}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            {deletePhotoMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
                           </Button>
                         </div>
                         <p className="text-xs text-gray-600 mt-1 truncate">{photo.name}</p>
@@ -241,9 +211,17 @@ const MediaManagement = () => {
                 multiple
                 onChange={handleVideoUpload}
                 className="hidden"
+                disabled={addVideoMutation.isPending}
               />
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="w-4 h-4 mr-2" />
+              <Button 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={addVideoMutation.isPending}
+              >
+                {addVideoMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4 mr-2" />
+                )}
                 Aggiungi Video
               </Button>
             </label>
@@ -258,6 +236,7 @@ const MediaManagement = () => {
                       src={video.thumbnail}
                       alt={video.name}
                       className="w-full h-48 object-cover"
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                       <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
@@ -281,9 +260,14 @@ const MediaManagement = () => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteVideo(video.id)}
+                          onClick={() => deleteVideoMutation.mutate(video.id)}
+                          disabled={deleteVideoMutation.isPending}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deleteVideoMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
