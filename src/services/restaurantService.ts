@@ -6,14 +6,13 @@ import {
   getDoc, 
   addDoc, 
   updateDoc, 
-  deleteDoc, 
   query, 
   where, 
   orderBy,
   limit
 } from 'firebase/firestore';
 import { db } from '@/config/firebase';
-import { RestaurantProfile, MenuItem, Review } from '@/types';
+import { RestaurantProfile } from '@/types';
 
 export const restaurantService = {
   // Ottieni tutti i ristoranti
@@ -31,51 +30,36 @@ export const restaurantService = {
 
   // Cerca ristoranti
   async searchRestaurants(searchTerm: string): Promise<RestaurantProfile[]> {
-    const q = query(
-      collection(db, 'restaurants'),
-      where('name', '>=', searchTerm),
-      where('name', '<=', searchTerm + '\uf8ff')
+    const allRestaurants = await this.getAllRestaurants();
+    return allRestaurants.filter(restaurant => 
+      restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      restaurant.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      restaurant.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      restaurant.cuisineType?.some(cuisine => 
+        cuisine.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RestaurantProfile));
   },
 
-  // Menu items
-  async getMenuItems(restaurantId: string): Promise<MenuItem[]> {
-    const q = query(
-      collection(db, 'menuItems'),
-      where('restaurantId', '==', restaurantId)
+  // Aggiorna profilo ristorante
+  async updateRestaurant(id: string, updates: Partial<RestaurantProfile>): Promise<void> {
+    await updateDoc(doc(db, 'restaurants', id), updates);
+  },
+
+  // Ottieni ristoranti per tipo di cucina
+  async getRestaurantsByCuisine(cuisineType: string): Promise<RestaurantProfile[]> {
+    const allRestaurants = await this.getAllRestaurants();
+    return allRestaurants.filter(restaurant => 
+      restaurant.cuisineType?.includes(cuisineType)
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
   },
 
-  async addMenuItem(menuItem: Omit<MenuItem, 'id'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'menuItems'), menuItem);
-    return docRef.id;
-  },
-
-  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<void> {
-    await updateDoc(doc(db, 'menuItems', id), updates);
-  },
-
-  async deleteMenuItem(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'menuItems', id));
-  },
-
-  // Reviews
-  async getRestaurantReviews(restaurantId: string): Promise<Review[]> {
-    const q = query(
-      collection(db, 'reviews'),
-      where('restaurantId', '==', restaurantId),
-      orderBy('date', 'desc')
+  // Ottieni ristoranti nelle vicinanze (simulato)
+  async getNearbyRestaurants(latitude: number, longitude: number, radiusKm: number = 10): Promise<RestaurantProfile[]> {
+    const allRestaurants = await this.getAllRestaurants();
+    // In una implementazione reale, useresti una query geospaziale
+    return allRestaurants.filter(restaurant => 
+      restaurant.latitude && restaurant.longitude
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-  },
-
-  async addReview(review: Omit<Review, 'id'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'reviews'), review);
-    return docRef.id;
   }
 };
