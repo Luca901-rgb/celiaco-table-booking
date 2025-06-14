@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -95,7 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
                 
               if (userProfile) {
-                const mappedProfile = mapProfileToAppUser(userProfile);
+                // Cast user_type to the correct type since it should be one of these values
+                const typedProfile = {
+                  ...userProfile,
+                  user_type: userProfile.user_type as 'client' | 'restaurant'
+                } as UserProfile;
+                
+                const mappedProfile = mapProfileToAppUser(typedProfile);
                 setProfile(mappedProfile);
                 setUser({
                   ...session.user,

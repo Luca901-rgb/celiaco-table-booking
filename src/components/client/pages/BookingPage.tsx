@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Users, MessageSquare, Check } from 'lucide-react';
@@ -41,8 +40,7 @@ const BookingPage = () => {
         time: bookingData.time,
         guests: bookingData.guests,
         specialRequests: bookingData.specialRequests,
-        status: 'pending',
-        createdAt: new Date()
+        status: 'pending'
       });
       
       setConfirmedBooking(booking);

@@ -19,16 +19,17 @@ const mapDatabaseToBooking = (dbBooking: any): Booking => {
   };
 };
 
-const mapBookingToDatabase = (booking: Omit<Booking, 'id'>): Partial<DatabaseBooking> => {
+const mapBookingToDatabase = (booking: Omit<Booking, 'id' | 'createdAt'>): DatabaseBooking => {
   return {
+    id: '', // Will be auto-generated
     customer_id: booking.clientId,
     restaurant_id: booking.restaurantId,
     date: booking.date.toISOString().split('T')[0],
     time: booking.time,
     number_of_guests: booking.guests,
     status: booking.status,
-    special_requests: booking.specialRequests,
-    qr_code: booking.qrCode,
+    special_requests: booking.specialRequests || null,
+    qr_code: booking.qrCode || null,
     can_review: booking.canReview || false
   };
 };
@@ -61,14 +62,21 @@ export const bookingService = {
   },
 
   async createBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
-    const dbBooking = mapBookingToDatabase({
-      ...booking,
-      createdAt: new Date()
-    });
+    const dbBookingData = {
+      customer_id: booking.clientId,
+      restaurant_id: booking.restaurantId,
+      date: booking.date.toISOString().split('T')[0],
+      time: booking.time,
+      number_of_guests: booking.guests,
+      status: booking.status,
+      special_requests: booking.specialRequests || null,
+      qr_code: booking.qrCode || null,
+      can_review: booking.canReview || false
+    };
     
     const { data, error } = await supabase
       .from('bookings')
-      .insert(dbBooking)
+      .insert(dbBookingData)
       .select()
       .single();
     
