@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import AuthPage from '@/components/auth/AuthPage';
 import ClientApp from '@/components/client/ClientApp';
@@ -14,6 +14,7 @@ const Index = () => {
           <Route path="/" element={<AuthPage />} />
           <Route path="/client/*" element={<ClientApp />} />
           <Route path="/restaurant/*" element={<RestaurantApp />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </AuthProvider>
