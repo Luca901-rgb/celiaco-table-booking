@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useAverageRating } from '@/hooks/useReviews';
@@ -23,10 +23,10 @@ const HomePage = () => {
   });
 
   const { data: restaurants = [], isLoading } = useRestaurants();
-  const [filteredRestaurants, setFilteredRestaurants] = useState<RestaurantProfile[]>([]);
 
-  // Filter restaurants based on search and filters
-  useEffect(() => {
+  // Use useMemo to avoid infinite re-renders
+  const filteredRestaurants = useMemo(() => {
+    console.log('Filtering restaurants:', restaurants.length);
     let filtered = restaurants;
 
     // Search filter
@@ -104,7 +104,8 @@ const HomePage = () => {
       });
     }
 
-    setFilteredRestaurants(filtered);
+    console.log('Filtered restaurants:', filtered.length);
+    return filtered;
   }, [restaurants, searchTerm, filters, userLocation]);
 
   if (isLoading) {
