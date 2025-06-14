@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { RestaurantProfile } from "@/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPinCheck, Navigation } from "lucide-react";
+import { MapPinCheck, Navigation, Star } from "lucide-react";
 import { useGeolocation, calculateDistance, formatDistance } from "@/hooks/useGeolocation";
 
 interface MapWithMarkersProps {
@@ -30,20 +30,19 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     try {
       mapboxgl.accessToken = mapboxToken;
 
-      // Centra la mappa sulla posizione dell'utente se disponibile, altrimenti su Milano
+      // Center map on user location or Milan
       const center: [number, number] = userLocation 
         ? [userLocation.longitude, userLocation.latitude]
-        : [9.1895, 45.4642]; // Milano centro
+        : [9.1895, 45.4642];
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v12",
         center,
-        zoom: userLocation ? 14 : 12,
+        zoom: userLocation ? 12 : 10,
         attributionControl: false,
       });
 
-      // Zoom controls
       map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
       map.current.scrollZoom.enable();
 
@@ -56,7 +55,6 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
         console.error('Map error:', e);
       });
 
-      // Close popup on click outside
       map.current.on("click", () => {
         setSelected(null);
       });
@@ -65,7 +63,6 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
       console.error('Error initializing map:', error);
     }
 
-    // Cleanup function
     return () => {
       if (map.current) {
         console.log('Cleaning up map');
@@ -76,14 +73,28 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     };
   }, [mapboxToken, mapContainer.current]);
 
-  // Add user location marker
+  // Add user location marker (blue dot)
   useEffect(() => {
     if (!map.current || !userLocation || !mapInitialized) return;
 
     console.log('Adding user location marker');
 
     const userMarkerEl = document.createElement("div");
-    userMarkerEl.innerHTML = `<div style="background:#2563eb; border:3px solid #fff; border-radius:999px; width:16px; height:16px; box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>`;
+    userMarkerEl.innerHTML = `
+      <div style="
+        background: #2563eb; 
+        border: 3px solid #fff; 
+        border-radius: 50%; 
+        width: 20px; 
+        height: 20px; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="background: #fff; width: 6px; height: 6px; border-radius: 50%;"></div>
+      </div>
+    `;
     
     const userMarker = new mapboxgl.Marker(userMarkerEl)
       .setLngLat([userLocation.longitude, userLocation.latitude])
@@ -94,7 +105,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     };
   }, [userLocation, mapInitialized]);
 
-  // Add restaurant markers
+  // Add restaurant markers (red)
   useEffect(() => {
     if (!map.current || !restaurants.length || !mapInitialized) return;
 
@@ -108,12 +119,23 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
       if (typeof restaurant.longitude === "number" && typeof restaurant.latitude === "number") {
         const el = document.createElement("div");
         el.style.cursor = 'pointer';
-        el.innerHTML = `<div style="background:#22c55e; border-radius:999px;box-shadow:0 2px 8px #0001;padding:4px;">
-          <svg width="24" height="24" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 21.75S19.25 14.6667 19.25 9.625C19.25 5.25 16.5 2.5 12 2.5C7.5 2.5 4.75 5.25 4.75 9.625C4.75 14.6667 12 21.75 12 21.75Z"/>
-            <circle cx="12" cy="9.625" r="2.25" fill="#fff"/>
-          </svg>
-        </div>`;
+        el.innerHTML = `
+          <div style="
+            background: #dc2626; 
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(-50%, -100%);
+          ">
+            <svg width="20" height="20" fill="#fff" viewBox="0 0 24 24">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+          </div>
+        `;
 
         const marker = new mapboxgl.Marker(el)
           .setLngLat([restaurant.longitude, restaurant.latitude])
@@ -135,7 +157,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     };
   }, [restaurants, mapInitialized]);
 
-  // Recenter map when restaurant is selected
+  // Fly to selected restaurant
   useEffect(() => {
     if (selected && map.current && mapInitialized) {
       console.log('Flying to selected restaurant:', selected.name);
@@ -174,32 +196,50 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
       
-      {/* Loading indicator */}
       {!mapInitialized && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
           <div className="text-green-600 font-medium">Caricamento mappa...</div>
         </div>
       )}
       
-      {/* Location permission status */}
       {locationLoading && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-white/90 px-3 py-1 rounded-full text-sm">
           Rilevamento posizione...
         </div>
       )}
+
+      {/* Legend */}
+      <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white"></div>
+          <span className="text-xs text-gray-700">La tua posizione</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white"></div>
+          <span className="text-xs text-gray-700">Ristoranti</span>
+        </div>
+      </div>
       
       {selected && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[90vw] max-w-md animate-fade-in">
-          <Card className="p-4 shadow-2xl">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[90vw] max-w-md">
+          <Card className="p-4 shadow-2xl bg-white">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <MapPinCheck className="text-green-600" />
-                <div className="flex-1">
-                  <div className="font-semibold text-lg">{selected.name}</div>
-                  <div className="text-sm text-gray-600">{selected.address}</div>
+              <div className="flex items-start gap-3">
+                <MapPinCheck className="text-red-600 mt-1 flex-shrink-0" size={20} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-lg text-gray-900">{selected.name}</div>
+                  <div className="text-sm text-gray-600 break-words">{selected.address}</div>
+                  
+                  {/* Rating */}
+                  <div className="flex items-center gap-1 mt-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{(selected.average_rating || 0).toFixed(1)}</span>
+                    <span className="text-xs text-gray-500">({selected.total_reviews || 0} recensioni)</span>
+                  </div>
+
                   {getDistanceToRestaurant(selected) && (
-                    <div className="text-xs text-green-600 font-medium">
-                      📍 {getDistanceToRestaurant(selected)}
+                    <div className="text-sm text-green-600 font-medium mt-1">
+                      📍 {getDistanceToRestaurant(selected)} da te
                     </div>
                   )}
                 </div>
@@ -211,7 +251,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
                 size="sm"
               >
                 <Navigation className="w-4 h-4 mr-2" />
-                Naviga con Google Maps
+                Indicazioni con Google Maps
               </Button>
             </div>
           </Card>
