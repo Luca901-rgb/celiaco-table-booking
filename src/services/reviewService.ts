@@ -46,11 +46,12 @@ export const reviewService = {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
   },
 
-  // Calcola rating medio
-  async getAverageRating(restaurantId: string): Promise<number> {
+  // Calcola rating medio e conta recensioni
+  async getAverageRating(restaurantId: string): Promise<{ average: number; count: number }> {
     const reviews = await this.getRestaurantReviews(restaurantId, 1000);
-    if (reviews.length === 0) return 0;
+    if (reviews.length === 0) return { average: 0, count: 0 };
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    return totalRating / reviews.length;
+    const average = totalRating / reviews.length;
+    return { average, count: reviews.length };
   }
 };
