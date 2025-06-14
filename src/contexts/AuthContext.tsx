@@ -1,19 +1,12 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { 
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/config/firebase';
-import { User, ClientProfile, RestaurantProfile } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
+import { ClientProfile, RestaurantProfile } from '@/types';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   profile: ClientProfile | RestaurantProfile | null;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
@@ -35,38 +28,62 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<ClientProfile | RestaurantProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // Recupera il profilo utente dal Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          setUser(userData);
-          
-          // Recupera il profilo specifico (client o restaurant)
-          const profileDoc = await getDoc(doc(db, userData.type === 'client' ? 'clients' : 'restaurants', firebaseUser.uid));
-          if (profileDoc.exists()) {
-            setProfile(profileDoc.data() as ClientProfile | RestaurantProfile);
-          }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile
+          setTimeout(async () => {
+            try {
+              const { data: userProfile } = await supabase
+                .from('userprofiles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+                
+              if (userProfile) {
+                setProfile(userProfile as ClientProfile | RestaurantProfile);
+              }
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+            }
+          }, 0);
+        } else {
+          setProfile(null);
         }
-      } else {
-        setUser(null);
-        setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (!session) {
+        setLoading(false);
+      }
     });
 
-    return unsubscribe;
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -78,32 +95,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const { user: firebaseUser } = await signInWithPopup(auth, provider);
-      
-      // Controlla se l'utente esiste già
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-      
-      if (!userDoc.exists()) {
-        // Nuovo utente - crea profilo di default come client
-        const userData: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email!,
-          name: firebaseUser.displayName || 'Utente',
-          type: 'client',
-          profileComplete: true,
-          createdAt: new Date()
-        };
-
-        await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-
-        const profileData: ClientProfile = {
-          ...userData,
-          favoriteRestaurants: []
-        };
-
-        await setDoc(doc(db, 'clients', firebaseUser.uid), profileData);
-      }
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+      if (error) throw error;
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
@@ -115,41 +113,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string, type: 'client' | 'restaurant') => {
     setLoading(true);
     try {
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
-      
-      const userData: User = {
-        id: firebaseUser.uid,
+      const { error } = await supabase.auth.signUp({
         email,
-        name,
-        type,
-        profileComplete: false,
-        createdAt: new Date()
-      };
-
-      // Salva i dati base dell'utente
-      await setDoc(doc(db, 'users', firebaseUser.uid), userData);
-
-      // Crea il profilo specifico
-      const profileData = type === 'client' 
-        ? { ...userData, favoriteRestaurants: [] } as ClientProfile
-        : { 
-            ...userData, 
-            address: '',
-            phone: '',
-            openingHours: {
-              monday: { open: '19:00', close: '23:00', closed: false },
-              tuesday: { open: '19:00', close: '23:00', closed: false },
-              wednesday: { open: '19:00', close: '23:00', closed: false },
-              thursday: { open: '19:00', close: '23:00', closed: false },
-              friday: { open: '19:00', close: '24:00', closed: false },
-              saturday: { open: '19:00', close: '24:00', closed: false },
-              sunday: { open: '19:00', close: '23:00', closed: false }
-            },
-            certifications: []
-          } as RestaurantProfile;
-
-      await setDoc(doc(db, type === 'client' ? 'clients' : 'restaurants', firebaseUser.uid), profileData);
-      
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name,
+            user_type: type,
+            first_name: name.split(' ')[0],
+            last_name: name.split(' ')[1] || ''
+          }
+        }
+      });
+      if (error) throw error;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -160,7 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await signOut(auth);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error('Logout error:', error);
       throw error;
@@ -171,10 +149,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const collection = user.type === 'client' ? 'clients' : 'restaurants';
-      await setDoc(doc(db, collection, user.id), data, { merge: true });
+      const { error } = await supabase
+        .from('userprofiles')
+        .update(data)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
       
-      // Aggiorna lo stato locale
+      // Update local state
       setProfile(prev => prev ? { ...prev, ...data } : null);
     } catch (error) {
       console.error('Profile update error:', error);
@@ -185,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{ 
       user, 
+      session,
       profile, 
       login, 
       loginWithGoogle,

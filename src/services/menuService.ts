@@ -1,74 +1,89 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { MenuItem } from '@/types';
 
-// Mock data per simulare il backend
-let menuItems: MenuItem[] = [
-  {
-    id: '1',
-    name: 'Bruschetta Senza Glutine',
-    description: 'Pane artigianale senza glutine con pomodori freschi, basilico e olio extravergine',
-    price: 8.50,
-    category: 'antipasti',
-    allergens: ['pomodoro'],
-    isGlutenFree: true,
-    restaurantId: 'rest1',
-    available: true
-  },
-  {
-    id: '2',
-    name: 'Pasta alla Carbonara',
-    description: 'Pasta di riso con guanciale croccante, uova fresche e pecorino romano DOP',
-    price: 14.00,
-    category: 'primi',
-    allergens: ['uova', 'latticini'],
-    isGlutenFree: true,
-    restaurantId: 'rest1',
-    available: true
-  }
-];
-
 export const menuService = {
-  // Ottieni menu di un ristorante
   async getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return menuItems.filter(item => item.restaurantId === restaurantId && item.available);
+    const { data, error } = await supabase
+      .from('menuitems')
+      .select('*')
+      .eq('restaurant_id', restaurantId)
+      .eq('is_available', true);
+    
+    if (error) throw error;
+    return data || [];
   },
 
-  // Aggiungi nuovo item al menu
-  async addMenuItem(menuItem: Omit<MenuItem, 'id'>): Promise<string> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const newItem: MenuItem = {
-      ...menuItem,
-      id: `item-${Date.now()}`
+  async addMenuItem(menuItem: Omit<MenuItem, 'id'>): Promise<MenuItem> {
+    const { data, error } = await supabase
+      .from('menuitems')
+      .insert({
+        name: menuItem.name,
+        description: menuItem.description,
+        price: menuItem.price,
+        category: menuItem.category,
+        allergens: menuItem.allergens,
+        is_gluten_free: menuItem.isGlutenFree,
+        is_available: menuItem.available,
+        restaurant_id: menuItem.restaurantId,
+        image: menuItem.image || null
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: data.category,
+      allergens: data.allergens || [],
+      isGlutenFree: data.is_gluten_free || false,
+      restaurantId: data.restaurant_id,
+      available: data.is_available || true,
+      image: data.image
     };
-    menuItems.push(newItem);
-    return newItem.id;
   },
 
-  // Aggiorna item del menu
-  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const index = menuItems.findIndex(item => item.id === id);
-    if (index !== -1) {
-      menuItems[index] = { ...menuItems[index], ...updates };
-    }
+  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
+    const { data, error } = await supabase
+      .from('menuitems')
+      .update({
+        name: updates.name,
+        description: updates.description,
+        price: updates.price,
+        category: updates.category,
+        allergens: updates.allergens,
+        is_gluten_free: updates.isGlutenFree,
+        is_available: updates.available,
+        image: updates.image
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: data.category,
+      allergens: data.allergens || [],
+      isGlutenFree: data.is_gluten_free || false,
+      restaurantId: data.restaurant_id,
+      available: data.is_available || true,
+      image: data.image
+    };
   },
 
-  // Elimina item dal menu
   async deleteMenuItem(id: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    menuItems = menuItems.filter(item => item.id !== id);
-  },
-
-  // Cerca items per allergie
-  async searchMenuByAllergens(restaurantId: string, allergens: string[]): Promise<MenuItem[]> {
-    const allItems = await this.getRestaurantMenu(restaurantId);
-    return allItems.filter(item => 
-      !item.allergens?.some(allergen => 
-        allergens.some(userAllergen => 
-          allergen.toLowerCase().includes(userAllergen.toLowerCase())
-        )
-      )
-    );
+    const { error } = await supabase
+      .from('menuitems')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 };

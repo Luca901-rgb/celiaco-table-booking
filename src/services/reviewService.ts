@@ -1,62 +1,59 @@
 
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy,
-  limit
-} from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { supabase } from '@/integrations/supabase/client';
 import { Review } from '@/types';
 
 export const reviewService = {
-  // Ottieni recensioni di un ristorante
-  async getRestaurantReviews(restaurantId: string, limitCount: number = 10): Promise<Review[]> {
-    const q = query(
-      collection(db, 'reviews'),
-      where('restaurantId', '==', restaurantId),
-      orderBy('date', 'desc'),
-      limit(limitCount)
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+  async getRestaurantReviews(restaurantId: string): Promise<Review[]> {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select(`
+        *,
+        userprofiles!reviews_customer_id_fkey(first_name, last_name)
+      `)
+      .eq('restaurant_id', restaurantId);
+    
+    if (error) throw error;
+    return data || [];
   },
 
-  // Aggiungi nuova recensione
-  async addReview(review: Omit<Review, 'id'>): Promise<string> {
-    const reviewData = {
-      ...review,
-      date: new Date()
-    };
-    const docRef = await addDoc(collection(db, 'reviews'), reviewData);
-    return docRef.id;
-  },
-
-  // Ottieni recensioni di un cliente
-  async getClientReviews(clientId: string): Promise<Review[]> {
-    const q = query(
-      collection(db, 'reviews'),
-      where('clientId', '==', clientId),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
-  },
-
-  // Calcola rating medio e conta recensioni
   async getAverageRating(restaurantId: string): Promise<{ average: number; count: number }> {
-    const reviews = await this.getRestaurantReviews(restaurantId, 1000);
-    if (reviews.length === 0) return { average: 0, count: 0 };
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const average = totalRating / reviews.length;
-    return { average, count: reviews.length };
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('restaurant_id', restaurantId);
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      return { average: 0, count: 0 };
+    }
+    
+    const total = data.reduce((sum, review) => sum + review.rating, 0);
+    const average = total / data.length;
+    
+    return { average, count: data.length };
   },
 
-  // Alias per compatibilità
-  async getRestaurantRating(restaurantId: string): Promise<{ average: number; count: number }> {
-    return this.getAverageRating(restaurantId);
+  async addReview(review: Omit<Review, 'id'>): Promise<Review> {
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert(review)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async updateReview(id: string, updates: Partial<Review>): Promise<Review> {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
   }
 };
