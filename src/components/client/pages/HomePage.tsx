@@ -66,11 +66,6 @@ const HomePage = () => {
     setFilteredRestaurants(filtered);
   }, [restaurants, searchTerm, filters]);
 
-  const handleToggleFavorite = (restaurantId: string) => {
-    // Implementeremo questa funzione nel prossimo step
-    console.log('Toggle favorite:', restaurantId);
-  };
-
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center">
@@ -140,8 +135,6 @@ const HomePage = () => {
             <RestaurantCardWithRating
               key={restaurant.id}
               restaurant={restaurant}
-              onToggleFavorite={handleToggleFavorite}
-              isFavorite={clientProfile?.favoriteRestaurants?.includes(restaurant.id)}
             />
           ))}
         </div>
@@ -162,21 +155,15 @@ const HomePage = () => {
 
 // Component wrapper to handle rating data
 const RestaurantCardWithRating = ({ 
-  restaurant, 
-  onToggleFavorite, 
-  isFavorite 
+  restaurant
 }: {
   restaurant: RestaurantProfile;
-  onToggleFavorite: (id: string) => void;
-  isFavorite?: boolean;
 }) => {
   const { data: rating } = useAverageRating(restaurant.id);
   
   return (
     <RestaurantCard
       restaurant={restaurant}
-      onToggleFavorite={onToggleFavorite}
-      isFavorite={isFavorite}
       averageRating={rating?.average || 0}
       totalReviews={rating?.count || 0}
     />

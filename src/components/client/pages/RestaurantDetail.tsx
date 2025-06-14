@@ -1,4 +1,4 @@
-import { useState } from 'react';
+
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, Clock, Phone, Heart, Calendar, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRestaurant } from '@/hooks/useRestaurants';
 import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
+import { useFavorites } from '@/hooks/useFavorites';
 import { ReviewsList } from '../components/ReviewsList';
 import MenuSection from '../components/MenuSection';
 import RestaurantGallery from '../components/RestaurantGallery';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
-  const [isFavorite, setIsFavorite] = useState(false);
+  const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
 
   const { data: restaurant, isLoading } = useRestaurant(id!);
   const { data: reviews = [], isLoading: reviewsLoading } = useRestaurantReviews(id!);
@@ -37,6 +38,13 @@ const RestaurantDetail = () => {
 
   const averageRating = ratingData?.average || 0;
   const totalReviews = ratingData?.count || 0;
+  const isRestaurantFavorite = isFavorite(restaurant.id);
+
+  const handleFavoriteClick = () => {
+    if (!favoritesLoading) {
+      toggleFavorite(restaurant.id);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,14 +78,15 @@ const RestaurantDetail = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setIsFavorite(!isFavorite)}
+          onClick={handleFavoriteClick}
+          disabled={favoritesLoading}
           className={`absolute top-4 right-4 ${
-            isFavorite 
+            isRestaurantFavorite 
               ? 'bg-red-50 text-red-600 border-red-200' 
               : 'bg-white/90 hover:bg-white'
           }`}
         >
-          <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+          <Heart className={`w-4 h-4 ${isRestaurantFavorite ? 'fill-current' : ''}`} />
         </Button>
       </div>
 

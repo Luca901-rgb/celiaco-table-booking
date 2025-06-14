@@ -5,22 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Star, MapPin, Clock, Phone, Heart, Calendar } from 'lucide-react';
 import { RestaurantProfile } from '@/types';
 import { Link } from 'react-router-dom';
+import { useFavorites } from '@/hooks/useFavorites';
 
 interface RestaurantCardProps {
   restaurant: RestaurantProfile;
-  onToggleFavorite?: (restaurantId: string) => void;
-  isFavorite?: boolean;
   averageRating?: number;
   totalReviews?: number;
 }
 
 export const RestaurantCard = ({ 
   restaurant, 
-  onToggleFavorite, 
-  isFavorite = false,
   averageRating = 0,
   totalReviews = 0
 }: RestaurantCardProps) => {
+  const { toggleFavorite, isFavorite, loading } = useFavorites();
+
   const formatOpeningHours = (day: string) => {
     const hours = restaurant.openingHours[day];
     if (hours?.closed) return 'Chiuso';
@@ -42,6 +41,14 @@ export const RestaurantCard = ({
     }
   };
 
+  const handleFavoriteClick = () => {
+    if (!loading) {
+      toggleFavorite(restaurant.id);
+    }
+  };
+
+  const isRestaurantFavorite = isFavorite(restaurant.id);
+
   return (
     <Card className="border-green-200 hover:shadow-lg transition-shadow">
       <div className="relative">
@@ -58,18 +65,17 @@ export const RestaurantCard = ({
         )}
         
         {/* Favorite Button */}
-        {onToggleFavorite && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 bg-white/80 hover:bg-white"
-            onClick={() => onToggleFavorite(restaurant.id)}
-          >
-            <Heart 
-              className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
-            />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 right-2 bg-white/80 hover:bg-white"
+          onClick={handleFavoriteClick}
+          disabled={loading}
+        >
+          <Heart 
+            className={`w-4 h-4 ${isRestaurantFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
+          />
+        </Button>
       </div>
 
       <CardHeader className="pb-2">
