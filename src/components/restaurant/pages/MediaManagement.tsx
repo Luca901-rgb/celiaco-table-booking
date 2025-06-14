@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,8 @@ import {
   Trash2,
   Eye,
   Plus,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -27,6 +27,7 @@ const MediaManagement = () => {
   const restaurantId = 'rest1'; // In produzione, questo verrà dal contesto auth
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const { data: photos = [], isLoading: photosLoading } = useRestaurantPhotos(restaurantId);
   const { data: videos = [], isLoading: videosLoading } = useRestaurantVideos(restaurantId);
@@ -37,6 +38,19 @@ const MediaManagement = () => {
   const deleteVideoMutation = useDeleteVideo();
 
   const categories = ['ambiente', 'piatti'];
+
+  // Funzione per rilevare se siamo su mobile
+  const isMobile = () => {
+    return window.innerWidth <= 768;
+  };
+
+  const handlePhotoClick = (photoUrl: string) => {
+    if (isMobile()) {
+      setSelectedImage(photoUrl);
+    } else {
+      window.open(photoUrl, '_blank');
+    }
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -166,21 +180,27 @@ const MediaManagement = () => {
                           alt={photo.name}
                           className="w-full h-24 md:h-32 object-cover rounded-lg cursor-pointer"
                           loading="lazy"
-                          onClick={() => window.open(photo.url, '_blank')}
+                          onClick={() => handlePhotoClick(photo.url)}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-1 md:gap-2">
                           <Button 
                             size="sm" 
                             variant="secondary" 
                             className="text-xs md:text-sm"
-                            onClick={() => window.open(photo.url, '_blank')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePhotoClick(photo.url);
+                            }}
                           >
                             <Eye className="w-3 h-3 md:w-4 md:h-4" />
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => deletePhotoMutation.mutate(photo.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deletePhotoMutation.mutate(photo.id);
+                            }}
                             disabled={deletePhotoMutation.isPending}
                             className="text-xs md:text-sm"
                           >
@@ -342,6 +362,27 @@ const MediaManagement = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Modal per ingrandimento foto su mobile */}
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+          <div className="relative max-w-full max-h-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute top-4 right-4 bg-white/90 hover:bg-white z-10"
+              onClick={() => setSelectedImage(null)}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <img
+              src={selectedImage}
+              alt="Foto ingrandita"
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
