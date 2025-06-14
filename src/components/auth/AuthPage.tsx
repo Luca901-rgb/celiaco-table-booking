@@ -74,7 +74,7 @@ const AuthPage = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
             <Utensils className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-green-800">CeliacoTable</h1>
+          <h1 className="text-3xl font-bold text-green-800">GlutenFreeEats</h1>
           <p className="text-green-600">La tua app per ristoranti senza glutine</p>
         </div>
 
