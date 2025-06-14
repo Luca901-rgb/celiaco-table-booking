@@ -45,7 +45,8 @@ const MediaManagement = () => {
           addPhotoMutation.mutate({
             url: e.target?.result as string,
             category: 'piatti',
-            name: file.name.split('.')[0]
+            name: file.name.split('.')[0],
+            uploadedAt: new Date()
           });
         };
         reader.readAsDataURL(file);
@@ -61,7 +62,9 @@ const MediaManagement = () => {
           url: URL.createObjectURL(file),
           thumbnail: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
           name: file.name.split('.')[0],
-          duration: '0:00'
+          duration: '0:00',
+          category: 'presentazione',
+          uploadedAt: new Date()
         });
       });
     }
