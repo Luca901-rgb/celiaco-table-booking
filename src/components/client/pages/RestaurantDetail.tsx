@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, Clock, Phone, Heart, Calendar, MessageSquare } from 'lucide-react';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRestaurant } from '@/hooks/useRestaurants';
-import { useRestaurantReviews, useRestaurantRating } from '@/hooks/useReviews';
+import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
 import { ReviewsList } from '../components/ReviewsList';
 
 const RestaurantDetail = () => {
@@ -16,7 +15,7 @@ const RestaurantDetail = () => {
 
   const { data: restaurant, isLoading } = useRestaurant(id!);
   const { data: reviews = [], isLoading: reviewsLoading } = useRestaurantReviews(id!);
-  const { data: ratingData } = useRestaurantRating(id!);
+  const { data: ratingData } = useAverageRating(id!);
 
   if (isLoading) {
     return (
@@ -34,8 +33,8 @@ const RestaurantDetail = () => {
     );
   }
 
-  const averageRating = ratingData?.averageRating || 0;
-  const totalReviews = ratingData?.totalReviews || 0;
+  const averageRating = ratingData?.average || 0;
+  const totalReviews = ratingData?.count || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
