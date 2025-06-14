@@ -1,6 +1,6 @@
 
 import { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from './components/NotificationBell';
@@ -21,7 +21,14 @@ interface RestaurantLayoutProps {
 
 const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleSignOut = () => {
+    // Implementa la logica di logout qui
+    // Per ora navighiamo alla pagina di login
+    navigate('/');
+  };
 
   const navigation = [
     {
@@ -73,7 +80,7 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={signOut}
+                onClick={handleSignOut}
                 className="border-green-200 text-green-700 hover:bg-green-50"
               >
                 <LogOut className="w-4 h-4 mr-2" />

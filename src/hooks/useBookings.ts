@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '@/services/bookingService';
 import { Booking } from '@/types';
@@ -10,7 +9,7 @@ export const useClientBookings = (clientId: string) => {
     queryFn: () => bookingService.getClientBookings(clientId),
     enabled: !!clientId,
     staleTime: 30000, // Cache per 30 secondi per migliorare le prestazioni
-    cacheTime: 300000, // Mantieni in cache per 5 minuti
+    gcTime: 300000, // Mantieni in cache per 5 minuti (era cacheTime)
   });
 };
 
@@ -20,7 +19,7 @@ export const useRestaurantBookings = (restaurantId: string) => {
     queryFn: () => bookingService.getRestaurantBookings(restaurantId),
     enabled: !!restaurantId,
     staleTime: 30000,
-    cacheTime: 300000,
+    gcTime: 300000, // Mantieni in cache per 5 minuti (era cacheTime)
   });
 };
 

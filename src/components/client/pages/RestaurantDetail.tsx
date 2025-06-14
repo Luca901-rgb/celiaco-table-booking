@@ -12,6 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ReviewsList } from '../components/ReviewsList';
 import MenuSection from '../components/MenuSection';
 import RestaurantGallery from '../components/RestaurantGallery';
+import { reviewService } from '@/services/reviewService';
+import { useQuery } from '@tanstack/react-query';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -21,6 +23,13 @@ const RestaurantDetail = () => {
   const { data: restaurant, isLoading } = useRestaurant(id!);
   const { data: reviews = [], isLoading: reviewsLoading } = useRestaurantReviews(id!);
   const { data: ratingData } = useAverageRating(id!);
+
+  // Verifica se l'utente può lasciare una recensione
+  const { data: canReview = false } = useQuery({
+    queryKey: ['canReview', user?.id, id],
+    queryFn: () => reviewService.canUserReview(user!.id, id!),
+    enabled: !!user?.id && !!id,
+  });
 
   if (isLoading) {
     return (
@@ -47,9 +56,6 @@ const RestaurantDetail = () => {
       toggleFavorite(restaurant.id);
     }
   };
-
-  // Check if user can review (simplified for now - in production should check QR scan history)
-  const canReview = user && reviews.some(review => review.clientId === user.id);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,7 +157,7 @@ const RestaurantDetail = () => {
           ) : (
             <Button variant="outline" disabled className="flex-1 text-sm">
               <MessageSquare className="w-4 h-4 mr-2" />
-              Recensisci dopo visita
+              QR Code necessario
             </Button>
           )}
         </div>

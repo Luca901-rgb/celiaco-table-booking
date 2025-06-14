@@ -23,7 +23,42 @@ export const reviewService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    
+    // Mappa i dati al formato corretto
+    return (data || []).map(review => ({
+      id: review.id,
+      clientId: review.customer_id,
+      restaurantId: review.restaurant_id,
+      rating: review.rating,
+      comment: review.comment || '',
+      date: new Date(), // Dovremmo aggiungere created_at al database se non esiste
+      clientName: review.userprofiles 
+        ? `${review.userprofiles.first_name} ${review.userprofiles.last_name}`.trim()
+        : 'Utente Anonimo',
+      isVerified: review.is_verified || false,
+      bookingId: review.booking_id
+    }));
+  },
+
+  async getAverageRating(restaurantId: string) {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('restaurant_id', restaurantId);
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      return { average: 0, count: 0 };
+    }
+    
+    const totalRating = data.reduce((sum, review) => sum + review.rating, 0);
+    const average = totalRating / data.length;
+    
+    return {
+      average: Math.round(average * 10) / 10,
+      count: data.length
+    };
   },
 
   async createReview(review: Review) {
@@ -89,6 +124,11 @@ export const reviewService = {
     await this.updateRestaurantRating(review.restaurant_id);
     
     return data;
+  },
+
+  // Alias per compatibilità
+  addReview: function(review: Omit<any, 'id'>) {
+    return this.createReview(review);
   },
 
   async updateRestaurantRating(restaurantId: string) {
