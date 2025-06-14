@@ -12,7 +12,7 @@ import { Utensils, Users, Mail, Lock, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AuthPage = () => {
-  const { user, login, register, loading, profile } = useAuth();
+  const { user, login, register, loading } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState<'client' | 'restaurant'>('client');
@@ -23,20 +23,19 @@ const AuthPage = () => {
     confirmPassword: ''
   });
 
-  // Simplified redirect logic
+  // Redirect immediately when user is authenticated and has type
   useEffect(() => {
-    console.log('Auth state check:', { 
+    console.log('AuthPage: User state:', { 
       hasUser: !!user, 
       userType: user?.type,
-      hasProfile: !!profile,
-      profileType: profile?.type,
       loading 
     });
 
     if (user && user.type && !loading) {
-      console.log('Redirecting user with type:', user.type);
+      console.log('AuthPage: Redirecting user with type:', user.type);
       const redirectPath = user.type === 'client' ? '/client/home' : '/restaurant/dashboard';
-      navigate(redirectPath);
+      console.log('AuthPage: Redirecting to:', redirectPath);
+      navigate(redirectPath, { replace: true });
     }
   }, [user, loading, navigate]);
 
@@ -112,6 +111,20 @@ const AuthPage = () => {
             <Utensils className="w-8 h-8" />
           </div>
           <p className="text-green-600">Caricamento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is authenticated (prevent flash)
+  if (user && user.type) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
+            <Utensils className="w-8 h-8" />
+          </div>
+          <p className="text-green-600">Reindirizzamento in corso...</p>
         </div>
       </div>
     );

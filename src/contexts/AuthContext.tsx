@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -112,6 +113,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('Setting up auth state listener...');
     
+    // Check for existing session first
+    const initializeAuth = async () => {
+      console.log('Checking for existing session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        console.log('Existing session found, setting session and user immediately');
+        setSession(session);
+        
+        // Set basic user info immediately to unblock UI
+        setUser({
+          ...session.user,
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          type: session.user.user_metadata?.user_type || 'client'
+        });
+        
+        // Then load full profile
+        const userProfile = await loadUserProfile(session.user.id);
+        if (userProfile) {
+          setProfile(userProfile);
+          setUser(prev => ({
+            ...prev!,
+            name: userProfile.name,
+            type: userProfile.type
+          }));
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -119,59 +152,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          console.log('User authenticated, loading profile...');
-          setLoading(true);
-          
-          const userProfile = await loadUserProfile(session.user.id);
-          
-          if (userProfile) {
-            setProfile(userProfile);
+          if (event === 'SIGNED_IN') {
+            console.log('User signed in, setting user immediately');
+            setLoading(true);
+            
+            // Set basic user info immediately
             setUser({
               ...session.user,
-              name: userProfile.name,
-              type: userProfile.type
+              name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+              type: session.user.user_metadata?.user_type || 'client'
             });
-            console.log('User and profile set:', userProfile.type);
-          } else {
-            console.log('No profile found for user');
-            setUser(session.user as AppUser);
-            setProfile(null);
+            
+            // Then load full profile
+            const userProfile = await loadUserProfile(session.user.id);
+            if (userProfile) {
+              setProfile(userProfile);
+              setUser(prev => ({
+                ...prev!,
+                name: userProfile.name,
+                type: userProfile.type
+              }));
+            }
+            setLoading(false);
           }
         } else {
           console.log('User signed out');
           setUser(null);
           setProfile(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
-
-    // Check for existing session
-    const initializeAuth = async () => {
-      console.log('Checking for existing session...');
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        console.log('Existing session found, loading profile...');
-        const userProfile = await loadUserProfile(session.user.id);
-        
-        if (userProfile) {
-          setProfile(userProfile);
-          setUser({
-            ...session.user,
-            name: userProfile.name,
-            type: userProfile.type
-          });
-          console.log('Existing user and profile loaded:', userProfile.type);
-        } else {
-          setUser(session.user as AppUser);
-          setProfile(null);
-        }
-      }
-      setLoading(false);
-    };
-
-    initializeAuth();
 
     return () => subscription.unsubscribe();
   }, []);
