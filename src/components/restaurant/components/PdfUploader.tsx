@@ -114,43 +114,44 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
   return (
     <Card className="border-green-200">
       <CardHeader>
-        <CardTitle className="text-green-800 flex items-center gap-2">
-          <FileText className="w-5 h-5" />
+        <CardTitle className="text-green-800 flex items-center gap-2 text-base md:text-lg">
+          <FileText className="w-4 h-4 md:w-5 md:h-5" />
           Menù PDF
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 p-3 md:p-6">
         {menuPdf ? (
           // PDF esistente
           <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 border border-green-200 rounded-lg bg-green-50">
-              <CheckCircle className="w-6 h-6 text-green-600" />
-              <div className="flex-1">
-                <h4 className="font-medium text-green-800">{menuPdf.name}</h4>
-                <p className="text-sm text-green-600">
+            <div className="flex items-center gap-3 p-3 md:p-4 border border-green-200 rounded-lg bg-green-50">
+              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-green-800 text-sm md:text-base truncate">{menuPdf.name}</h4>
+                <p className="text-xs md:text-sm text-green-600">
                   {pdfService.formatFileSize(menuPdf.fileSize)} • 
                   Caricato il {menuPdf.uploadedAt.toLocaleDateString('it-IT')}
                 </p>
               </div>
-              <Badge className="bg-green-600">Attivo</Badge>
+              <Badge className="bg-green-600 text-xs flex-shrink-0">Attivo</Badge>
             </div>
 
-            <div className="flex gap-2">
+            {/* Mobile: Stack buttons vertically */}
+            <div className="flex flex-col md:flex-row gap-2">
               <Button
                 size="sm"
                 onClick={handlePreview}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 w-full md:w-auto text-xs"
               >
-                <Eye className="w-4 h-4 mr-2" />
+                <Eye className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Visualizza
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleDownload}
-                className="border-green-200 text-green-600"
+                className="border-green-200 text-green-600 w-full md:w-auto text-xs"
               >
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Scarica
               </Button>
               <Button
@@ -158,20 +159,21 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
+                className="w-full md:w-auto text-xs"
               >
                 {deleteMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 animate-spin" />
                 ) : (
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 )}
                 Elimina
               </Button>
             </div>
 
             <div className="border-t border-green-200 pt-4">
-              <p className="text-sm text-green-600 mb-3">Sostituisci con un nuovo PDF:</p>
+              <p className="text-xs md:text-sm text-green-600 mb-3">Sostituisci con un nuovo PDF:</p>
               <div
-                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                className={`border-2 border-dashed rounded-lg p-4 md:p-6 text-center transition-colors ${
                   dragActive 
                     ? 'border-green-400 bg-green-50' 
                     : 'border-green-200 hover:border-green-300'
@@ -181,8 +183,8 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
               >
-                <Upload className="w-8 h-8 mx-auto text-green-600 mb-2" />
-                <p className="text-sm text-green-600 mb-2">
+                <Upload className="w-6 h-6 md:w-8 md:h-8 mx-auto text-green-600 mb-2" />
+                <p className="text-xs md:text-sm text-green-600 mb-2">
                   Trascina un nuovo PDF qui o clicca per selezionarlo
                 </p>
                 <input
@@ -198,12 +200,12 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadMutation.isPending}
-                  className="border-green-200 text-green-600"
+                  className="border-green-200 text-green-600 w-full md:w-auto text-xs"
                 >
                   {uploadMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 animate-spin" />
                   ) : (
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                   )}
                   Seleziona File
                 </Button>
@@ -213,7 +215,7 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
         ) : (
           // Nessun PDF caricato
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-6 md:p-8 text-center transition-colors ${
               dragActive 
                 ? 'border-green-400 bg-green-50' 
                 : 'border-green-200 hover:border-green-300'
@@ -223,14 +225,14 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
             onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            <Upload className="w-16 h-16 mx-auto text-green-600 mb-4" />
-            <h3 className="font-medium text-green-800 mb-2">Carica il tuo menù PDF</h3>
-            <p className="text-sm text-green-600 mb-4">
+            <Upload className="w-12 h-12 md:w-16 md:h-16 mx-auto text-green-600 mb-4" />
+            <h3 className="font-medium text-green-800 mb-2 text-sm md:text-base">Carica il tuo menù PDF</h3>
+            <p className="text-xs md:text-sm text-green-600 mb-4">
               Trascina il file qui o clicca per selezionarlo
             </p>
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
                 <span>Formato supportato: PDF • Dimensione massima: 10MB</span>
               </div>
             </div>
@@ -245,12 +247,12 @@ const PdfUploader = ({ restaurantId }: PdfUploaderProps) => {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadMutation.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 w-full md:w-auto text-xs"
             >
               {uploadMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2 animate-spin" />
               ) : (
-                <Upload className="w-4 h-4 mr-2" />
+                <Upload className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
               )}
               {uploadMutation.isPending ? 'Caricamento...' : 'Seleziona File PDF'}
             </Button>
