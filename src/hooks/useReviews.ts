@@ -4,18 +4,18 @@ import { reviewService } from '@/services/reviewService';
 import { Review } from '@/types';
 import { toast } from '@/hooks/use-toast';
 
-export const useRestaurantReviews = (restaurantId: string, limit?: number) => {
+export const useRestaurantReviews = (restaurantId: string) => {
   return useQuery({
-    queryKey: ['reviews', restaurantId, limit],
-    queryFn: () => reviewService.getRestaurantReviews(restaurantId, limit),
+    queryKey: ['reviews', restaurantId],
+    queryFn: () => reviewService.getRestaurantReviews(restaurantId),
     enabled: !!restaurantId,
   });
 };
 
-export const useAverageRating = (restaurantId: string) => {
+export const useRestaurantRating = (restaurantId: string) => {
   return useQuery({
     queryKey: ['rating', restaurantId],
-    queryFn: () => reviewService.getAverageRating(restaurantId),
+    queryFn: () => reviewService.getRestaurantRating(restaurantId),
     enabled: !!restaurantId,
   });
 };
@@ -24,29 +24,21 @@ export const useAddReview = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: reviewService.addReview,
+    mutationFn: (review: Omit<Review, 'id'>) => reviewService.addReview(review),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['reviews', variables.restaurantId] });
       queryClient.invalidateQueries({ queryKey: ['rating', variables.restaurantId] });
       toast({
-        title: "Successo!",
-        description: "Recensione aggiunta"
+        title: "Recensione pubblicata!",
+        description: "Grazie per aver condiviso la tua esperienza"
       });
     },
     onError: () => {
       toast({
         title: "Errore",
-        description: "Errore nell'aggiunta della recensione",
+        description: "Errore nella pubblicazione della recensione",
         variant: "destructive"
       });
     }
-  });
-};
-
-export const useClientReviews = (clientId: string) => {
-  return useQuery({
-    queryKey: ['clientReviews', clientId],
-    queryFn: () => reviewService.getClientReviews(clientId),
-    enabled: !!clientId,
   });
 };
