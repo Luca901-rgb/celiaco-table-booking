@@ -147,17 +147,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           console.log('Existing session found:', session.user.id);
+          console.log('User metadata:', session.user.user_metadata);
           setSession(session);
           
-          // Imposta immediatamente l'utente con i dati di base
+          // Determina il tipo di utente dai metadati o dal profilo
+          let userType: 'client' | 'restaurant' = 'client';
+          
+          // Prima prova a prenderlo dai metadati
+          if (session.user.user_metadata?.user_type) {
+            userType = session.user.user_metadata.user_type;
+            console.log('User type from metadata:', userType);
+          } else {
+            // Se non c'è nei metadati, prova dal profilo
+            const userProfile = await loadUserProfile(session.user.id);
+            if (userProfile) {
+              userType = userProfile.type;
+              console.log('User type from profile:', userType);
+            }
+          }
+          
+          // Imposta l'utente con il tipo corretto
           const basicUser: AppUser = {
             ...session.user,
             name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-            type: session.user.user_metadata?.user_type || 'client'
+            type: userType
           };
           setUser(basicUser);
           
-          // Prova a caricare il profilo completo, ma non bloccare l'app se fallisce
+          // Carica il profilo completo
           try {
             const userProfile = await loadUserProfile(session.user.id);
             if (userProfile) {
@@ -168,13 +185,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 type: userProfile.type
               }));
             } else {
-              // Crea un profilo di default se non esiste
-              const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+              const defaultProfile = createDefaultProfile(session.user, userType);
               setProfile(defaultProfile);
             }
           } catch (profileError) {
             console.error('Error loading profile, using default:', profileError);
-            const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+            const defaultProfile = createDefaultProfile(session.user, userType);
             setProfile(defaultProfile);
           }
         }
@@ -195,12 +211,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           console.log('User signed in:', session.user.id);
+          console.log('User metadata:', session.user.user_metadata);
+          
+          // Determina il tipo di utente
+          let userType: 'client' | 'restaurant' = 'client';
+          
+          if (session.user.user_metadata?.user_type) {
+            userType = session.user.user_metadata.user_type;
+            console.log('User type from metadata:', userType);
+          }
           
           // Imposta immediatamente l'utente
           const basicUser: AppUser = {
             ...session.user,
             name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
-            type: session.user.user_metadata?.user_type || 'client'
+            type: userType
           };
           setUser(basicUser);
           
@@ -216,12 +241,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   type: userProfile.type
                 }));
               } else {
-                const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+                const defaultProfile = createDefaultProfile(session.user, userType);
                 setProfile(defaultProfile);
               }
             } catch (error) {
               console.error('Error loading profile in background:', error);
-              const defaultProfile = createDefaultProfile(session.user, basicUser.type);
+              const defaultProfile = createDefaultProfile(session.user, userType);
               setProfile(defaultProfile);
             }
           }, 100);
@@ -275,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string, type: 'client' | 'restaurant') => {
     setLoading(true);
     try {
+      console.log('Registering user with type:', type);
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -289,6 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       if (error) throw error;
+      console.log('Registration successful for type:', type);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
