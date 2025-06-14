@@ -13,7 +13,7 @@ import { Utensils, Users, Mail, Lock, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AuthPage = () => {
-  const { user, login, register, loading } = useAuth();
+  const { user, login, register, loading, profile } = useAuth();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [userType, setUserType] = useState<'client' | 'restaurant'>('client');
@@ -24,11 +24,17 @@ const AuthPage = () => {
     confirmPassword: ''
   });
 
+  // Redirect logic - now checks both user and profile
   useEffect(() => {
-    if (user) {
-      navigate(user.type === 'client' ? '/client/home' : '/restaurant/dashboard');
+    if (user && profile) {
+      console.log('Redirecting user:', user, 'with profile:', profile);
+      const redirectPath = profile.type === 'client' ? '/client/home' : '/restaurant/dashboard';
+      navigate(redirectPath);
+    } else if (user && !profile && !loading) {
+      // If user exists but no profile and not loading, wait a bit more
+      console.log('User exists but no profile yet, waiting...');
     }
-  }, [user, navigate]);
+  }, [user, profile, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +51,10 @@ const AuthPage = () => {
     try {
       if (isLogin) {
         await login(formData.email, formData.password);
+        console.log('Login successful');
       } else {
         await register(formData.email, formData.password, formData.name, userType);
+        console.log('Registration successful');
       }
       toast({
         title: "Successo!",
@@ -90,6 +98,20 @@ const AuthPage = () => {
       [e.target.name]: e.target.value
     });
   };
+
+  // Show loading state while authentication is being processed
+  if (loading && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
+            <Utensils className="w-8 h-8" />
+          </div>
+          <p className="text-green-600">Caricamento del profilo...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
