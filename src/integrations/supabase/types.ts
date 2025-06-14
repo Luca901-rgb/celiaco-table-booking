@@ -329,17 +329,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_reviews_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "userprofiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reviews_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
           {

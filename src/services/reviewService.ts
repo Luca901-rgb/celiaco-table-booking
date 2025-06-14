@@ -17,7 +17,7 @@ export const reviewService = {
       .from('reviews')
       .select(`
         *,
-        userprofiles!reviews_customer_id_fkey(first_name, last_name)
+        userprofiles!fk_reviews_customer(first_name, last_name)
       `)
       .eq('restaurant_id', restaurantId)
       .order('created_at', { ascending: false });
