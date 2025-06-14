@@ -78,15 +78,15 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-4 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-green-800">Dashboard</h1>
+      <div className="px-2">
+        <h1 className="text-2xl font-bold text-green-800">Dashboard</h1>
         <p className="text-green-600">Panoramica del tuo ristorante</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-green-800">
@@ -171,29 +171,29 @@ const DashboardPage = () => {
             Prenotazioni di Oggi
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {todayBookings.map((booking) => (
             <div key={booking.id} className="flex items-center justify-between p-3 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <div className="font-semibold text-green-800">{booking.time}</div>
-                  <div className="text-sm text-gray-500">{booking.guests} persone</div>
+              <div className="flex items-center gap-3">
+                <div className="text-center min-w-[60px]">
+                  <div className="font-semibold text-green-800 text-sm">{booking.time}</div>
+                  <div className="text-xs text-gray-500">{booking.guests} pers.</div>
                 </div>
-                <div>
-                  <div className="font-medium text-green-800">{booking.customerName}</div>
+                <div className="flex-1">
+                  <div className="font-medium text-green-800 text-sm">{booking.customerName}</div>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge 
                       variant={
                         booking.status === 'confirmed' ? 'default' :
                         booking.status === 'pending' ? 'secondary' : 'destructive'
                       }
-                      className={booking.status === 'confirmed' ? 'bg-green-600' : ''}
+                      className={`text-xs ${booking.status === 'confirmed' ? 'bg-green-600' : ''}`}
                     >
                       {booking.status === 'confirmed' ? 'Confermata' :
                        booking.status === 'pending' ? 'In Attesa' : 'Annullata'}
                     </Badge>
                     {booking.hasArrived && (
-                      <Badge className="bg-blue-600">
+                      <Badge className="bg-blue-600 text-xs">
                         <CheckCircle className="w-3 h-3 mr-1" />
                         Arrivato
                       </Badge>
@@ -201,23 +201,23 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {booking.status === 'pending' && (
                   <>
-                    <Button size="sm" variant="outline" className="text-red-600 border-red-200">
-                      <XCircle className="w-4 h-4 mr-1" />
+                    <Button size="sm" variant="outline" className="text-red-600 border-red-200 text-xs px-2">
+                      <XCircle className="w-3 h-3 mr-1" />
                       Rifiuta
                     </Button>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                      <CheckCircle className="w-4 h-4 mr-1" />
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-xs px-2">
+                      <CheckCircle className="w-3 h-3 mr-1" />
                       Conferma
                     </Button>
                   </>
                 )}
                 {booking.status === 'confirmed' && !booking.hasArrived && (
-                  <Button size="sm" variant="outline" className="border-green-200 text-green-600">
-                    <QrCode className="w-4 h-4 mr-1" />
-                    Scansiona QR
+                  <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2">
+                    <QrCode className="w-3 h-3 mr-1" />
+                    Scansiona
                   </Button>
                 )}
               </div>
@@ -234,18 +234,18 @@ const DashboardPage = () => {
             Recensioni Recenti
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {recentReviews.map((review) => (
             <div key={review.id} className="p-3 border border-green-200 rounded-lg">
               <div className="flex items-start justify-between">
-                <div className="space-y-2">
+                <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-green-800">{review.customerName}</span>
+                    <span className="font-medium text-green-800 text-sm">{review.customerName}</span>
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-4 h-4 ${
+                          className={`w-3 h-3 ${
                             i < review.rating
                               ? 'fill-yellow-400 text-yellow-400'
                               : 'text-gray-300'
@@ -253,11 +253,11 @@ const DashboardPage = () => {
                         />
                       ))}
                     </div>
-                    <span className="text-sm text-gray-500">{review.date}</span>
+                    <span className="text-xs text-gray-500">{review.date}</span>
                   </div>
-                  <p className="text-gray-700">{review.comment}</p>
+                  <p className="text-gray-700 text-sm">{review.comment}</p>
                 </div>
-                <Button size="sm" variant="outline" className="border-green-200 text-green-600">
+                <Button size="sm" variant="outline" className="border-green-200 text-green-600 text-xs px-2 ml-3">
                   Rispondi
                 </Button>
               </div>
