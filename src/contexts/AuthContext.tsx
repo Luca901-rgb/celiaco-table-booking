@@ -3,9 +3,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { ClientProfile, RestaurantProfile } from '@/types';
+import { UserProfile } from '@/types/supabase';
+
+// Creazione di un tipo User personalizzato che estende quello di Supabase
+interface AppUser extends User {
+  name?: string;
+  type?: 'client' | 'restaurant';
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   session: Session | null;
   profile: ClientProfile | RestaurantProfile | null;
   login: (email: string, password: string) => Promise<void>;
@@ -26,8 +33,46 @@ export const useAuth = () => {
   return context;
 };
 
+const mapProfileToAppUser = (profile: UserProfile): ClientProfile | RestaurantProfile => {
+  const baseProfile = {
+    id: profile.id,
+    email: profile.email,
+    name: `${profile.first_name} ${profile.last_name}`.trim(),
+    type: profile.user_type as 'client' | 'restaurant',
+    profileComplete: true,
+    createdAt: new Date()
+  };
+
+  if (profile.user_type === 'restaurant') {
+    return {
+      ...baseProfile,
+      type: 'restaurant',
+      address: profile.address || '',
+      phone: profile.phone || '',
+      description: '',
+      website: '',
+      coverImage: '',
+      openingHours: {},
+      certifications: [],
+      cuisineType: [],
+      priceRange: 'medium',
+      latitude: 0,
+      longitude: 0
+    } as RestaurantProfile;
+  } else {
+    return {
+      ...baseProfile,
+      type: 'client',
+      phone: profile.phone,
+      address: profile.address,
+      allergies: [],
+      favoriteRestaurants: []
+    } as ClientProfile;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<ClientProfile | RestaurantProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,10 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
-        setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
+          // Defer Supabase calls with setTimeout to avoid deadlocks
           setTimeout(async () => {
             try {
               const { data: userProfile } = await supabase
@@ -51,13 +95,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .single();
                 
               if (userProfile) {
-                setProfile(userProfile as ClientProfile | RestaurantProfile);
+                const mappedProfile = mapProfileToAppUser(userProfile);
+                setProfile(mappedProfile);
+                setUser({
+                  ...session.user,
+                  name: mappedProfile.name,
+                  type: mappedProfile.type
+                });
               }
             } catch (error) {
               console.error('Error fetching user profile:', error);
             }
           }, 0);
         } else {
+          setUser(null);
           setProfile(null);
         }
         setLoading(false);
@@ -67,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
       if (!session) {
         setLoading(false);
       }
@@ -151,7 +201,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase
         .from('userprofiles')
-        .update(data)
+        .update({
+          first_name: data.name?.split(' ')[0],
+          last_name: data.name?.split(' ')[1] || '',
+          phone: data.phone,
+          address: data.address
+        })
         .eq('user_id', user.id);
         
       if (error) throw error;

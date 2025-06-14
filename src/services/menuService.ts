@@ -1,6 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { MenuItem } from '@/types';
+import { DatabaseMenuItem } from '@/types/supabase';
+
+const mapDatabaseToMenuItem = (dbMenuItem: DatabaseMenuItem): MenuItem => {
+  return {
+    id: dbMenuItem.id,
+    name: dbMenuItem.name,
+    description: dbMenuItem.description || '',
+    price: dbMenuItem.price,
+    category: dbMenuItem.category || '',
+    image: dbMenuItem.image,
+    allergens: dbMenuItem.allergens || [],
+    isGlutenFree: dbMenuItem.is_gluten_free || false,
+    restaurantId: dbMenuItem.restaurant_id || '',
+    available: dbMenuItem.is_available !== false
+  };
+};
 
 export const menuService = {
   async getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {
@@ -11,7 +27,7 @@ export const menuService = {
       .eq('is_available', true);
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(mapDatabaseToMenuItem);
   },
 
   async addMenuItem(menuItem: Omit<MenuItem, 'id'>): Promise<MenuItem> {
@@ -32,18 +48,7 @@ export const menuService = {
       .single();
     
     if (error) throw error;
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      allergens: data.allergens || [],
-      isGlutenFree: data.is_gluten_free || false,
-      restaurantId: data.restaurant_id,
-      available: data.is_available || true,
-      image: data.image
-    };
+    return mapDatabaseToMenuItem(data);
   },
 
   async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
@@ -64,18 +69,7 @@ export const menuService = {
       .single();
     
     if (error) throw error;
-    return {
-      id: data.id,
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      allergens: data.allergens || [],
-      isGlutenFree: data.is_gluten_free || false,
-      restaurantId: data.restaurant_id,
-      available: data.is_available || true,
-      image: data.image
-    };
+    return mapDatabaseToMenuItem(data);
   },
 
   async deleteMenuItem(id: string): Promise<void> {

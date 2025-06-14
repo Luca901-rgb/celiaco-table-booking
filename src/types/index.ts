@@ -61,6 +61,7 @@ export interface Booking {
   specialRequests?: string;
   qrCode?: string;
   createdAt: Date;
+  canReview?: boolean;
 }
 
 export interface Review {
@@ -71,4 +72,6 @@ export interface Review {
   comment: string;
   date: Date;
   clientName: string;
+  isVerified?: boolean;
+  bookingId?: string;
 }

@@ -41,7 +41,8 @@ const BookingPage = () => {
         time: bookingData.time,
         guests: bookingData.guests,
         specialRequests: bookingData.specialRequests,
-        status: 'pending'
+        status: 'pending',
+        createdAt: new Date()
       });
       
       setConfirmedBooking(booking);
