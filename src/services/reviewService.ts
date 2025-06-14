@@ -1,102 +1,155 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Review } from '@/types';
-import { DatabaseReview } from '@/types/supabase';
 
-const mapDatabaseToReview = (dbReview: any): Review => {
-  const userProfile = dbReview.userprofiles;
-  const clientName = userProfile 
-    ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
-    : 'Utente Anonimo';
-
-  return {
-    id: dbReview.id,
-    clientId: dbReview.customer_id || '',
-    restaurantId: dbReview.restaurant_id || '',
-    rating: dbReview.rating,
-    comment: dbReview.comment || '',
-    date: new Date(), // Default per ora
-    clientName: clientName,
-    isVerified: dbReview.is_verified || false,
-    bookingId: dbReview.booking_id
-  };
-};
-
-const mapReviewToDatabase = (review: Omit<Review, 'id' | 'date' | 'clientName'>): Omit<DatabaseReview, 'id'> => {
-  return {
-    customer_id: review.clientId,
-    restaurant_id: review.restaurantId,
-    rating: review.rating,
-    comment: review.comment,
-    is_verified: review.isVerified,
-    booking_id: review.bookingId
-  };
-};
+export interface Review {
+  id?: string;
+  customer_id: string;
+  restaurant_id: string;
+  rating: number;
+  comment?: string;
+  is_verified?: boolean;
+  booking_id?: string;
+}
 
 export const reviewService = {
-  async getRestaurantReviews(restaurantId: string): Promise<Review[]> {
+  async getRestaurantReviews(restaurantId: string) {
     const { data, error } = await supabase
       .from('reviews')
       .select(`
         *,
         userprofiles!reviews_customer_id_fkey(first_name, last_name)
       `)
-      .eq('restaurant_id', restaurantId);
+      .eq('restaurant_id', restaurantId)
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return (data || []).map(mapDatabaseToReview);
+    return data || [];
   },
 
-  async getAverageRating(restaurantId: string): Promise<{ average: number; count: number }> {
+  async createReview(review: Review) {
+    // Verifica che l'utente abbia una prenotazione completata per questo ristorante
+    const { data: completedBooking, error: bookingError } = await supabase
+      .from('bookings')
+      .select('id, can_review')
+      .eq('customer_id', review.customer_id)
+      .eq('restaurant_id', review.restaurant_id)
+      .eq('status', 'completed')
+      .eq('can_review', true)
+      .maybeSingle();
+
+    if (bookingError) {
+      console.error('Error checking booking:', bookingError);
+      throw new Error('Errore nel verificare la prenotazione');
+    }
+
+    if (!completedBooking) {
+      throw new Error('Per lasciare una recensione devi aver completato una prenotazione. Il ristorante deve scansionare il tuo QR code all\'arrivo.');
+    }
+
+    // Verifica che non esista già una recensione per questa prenotazione
+    const { data: existingReview, error: existingError } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('customer_id', review.customer_id)
+      .eq('restaurant_id', review.restaurant_id)
+      .eq('booking_id', completedBooking.id)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('Error checking existing review:', existingError);
+      throw new Error('Errore nel verificare le recensioni esistenti');
+    }
+
+    if (existingReview) {
+      throw new Error('Hai già lasciato una recensione per questa prenotazione.');
+    }
+
+    // Crea la recensione verificata
+    const reviewData = {
+      customer_id: review.customer_id,
+      restaurant_id: review.restaurant_id,
+      rating: review.rating,
+      comment: review.comment,
+      is_verified: true, // Sempre verificata perché richiede prenotazione completata
+      booking_id: completedBooking.id
+    };
+
     const { data, error } = await supabase
+      .from('reviews')
+      .insert(reviewData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating review:', error);
+      throw error;
+    }
+
+    // Dopo aver creato la recensione, aggiorna le statistiche del ristorante
+    await this.updateRestaurantRating(review.restaurant_id);
+    
+    return data;
+  },
+
+  async updateRestaurantRating(restaurantId: string) {
+    // Calcola la media delle recensioni
+    const { data: stats, error } = await supabase
       .from('reviews')
       .select('rating')
       .eq('restaurant_id', restaurantId);
     
-    if (error) throw error;
-    
-    if (!data || data.length === 0) {
-      return { average: 0, count: 0 };
+    if (error) {
+      console.error('Error calculating rating:', error);
+      return;
     }
-    
-    const total = data.reduce((sum, review) => sum + review.rating, 0);
-    const average = total / data.length;
-    
-    return { average, count: data.length };
+
+    if (stats && stats.length > 0) {
+      const totalRating = stats.reduce((sum, review) => sum + review.rating, 0);
+      const averageRating = totalRating / stats.length;
+      
+      await supabase
+        .from('restaurants')
+        .update({
+          average_rating: Math.round(averageRating * 10) / 10, // Arrotonda a 1 decimale
+          total_reviews: stats.length
+        })
+        .eq('id', restaurantId);
+    }
   },
 
-  async addReview(review: Omit<Review, 'id' | 'date' | 'clientName'>): Promise<Review> {
-    const dbReviewData = mapReviewToDatabase(review);
-    
-    const { data, error } = await supabase
-      .from('reviews')
-      .insert(dbReviewData)
-      .select(`
-        *,
-        userprofiles!reviews_customer_id_fkey(first_name, last_name)
-      `)
-      .single();
-    
-    if (error) throw error;
-    return mapDatabaseToReview(data);
-  },
+  async canUserReview(customerId: string, restaurantId: string): Promise<boolean> {
+    const { data: completedBooking, error } = await supabase
+      .from('bookings')
+      .select('id, can_review')
+      .eq('customer_id', customerId)
+      .eq('restaurant_id', restaurantId)
+      .eq('status', 'completed')
+      .eq('can_review', true)
+      .maybeSingle();
 
-  async updateReview(id: string, updates: Partial<Omit<Review, 'id' | 'date' | 'clientName'>>): Promise<Review> {
-    const { data, error } = await supabase
+    if (error) {
+      console.error('Error checking review eligibility:', error);
+      return false;
+    }
+
+    if (!completedBooking) {
+      return false;
+    }
+
+    // Verifica che non esista già una recensione
+    const { data: existingReview, error: existingError } = await supabase
       .from('reviews')
-      .update({
-        rating: updates.rating,
-        comment: updates.comment,
-        is_verified: updates.isVerified
-      })
-      .eq('id', id)
-      .select(`
-        *,
-        userprofiles!reviews_customer_id_fkey(first_name, last_name)
-      `)
-      .single();
-    
-    if (error) throw error;
-    return mapDatabaseToReview(data);
+      .select('id')
+      .eq('customer_id', customerId)
+      .eq('restaurant_id', restaurantId)
+      .eq('booking_id', completedBooking.id)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('Error checking existing review:', existingError);
+      return false;
+    }
+
+    return !existingReview;
   }
 };

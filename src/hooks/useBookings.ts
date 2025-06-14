@@ -9,6 +9,8 @@ export const useClientBookings = (clientId: string) => {
     queryKey: ['bookings', 'client', clientId],
     queryFn: () => bookingService.getClientBookings(clientId),
     enabled: !!clientId,
+    staleTime: 30000, // Cache per 30 secondi per migliorare le prestazioni
+    cacheTime: 300000, // Mantieni in cache per 5 minuti
   });
 };
 
@@ -17,6 +19,8 @@ export const useRestaurantBookings = (restaurantId: string) => {
     queryKey: ['bookings', 'restaurant', restaurantId],
     queryFn: () => bookingService.getRestaurantBookings(restaurantId),
     enabled: !!restaurantId,
+    staleTime: 30000,
+    cacheTime: 300000,
   });
 };
 
@@ -25,18 +29,26 @@ export const useCreateBooking = () => {
   
   return useMutation({
     mutationFn: bookingService.createBooking,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['bookings', 'client', variables.clientId] });
-      queryClient.invalidateQueries({ queryKey: ['bookings', 'restaurant', variables.restaurantId] });
+    onSuccess: (newBooking, variables) => {
+      // Aggiorna immediatamente la cache locale
+      queryClient.setQueryData(['bookings', 'client', variables.clientId], (old: Booking[] | undefined) => {
+        return [newBooking, ...(old || [])];
+      });
+      
+      queryClient.setQueryData(['bookings', 'restaurant', variables.restaurantId], (old: Booking[] | undefined) => {
+        return [newBooking, ...(old || [])];
+      });
+      
       toast({
-        title: "Prenotazione confermata!",
-        description: "La tua prenotazione è stata creata con successo"
+        title: "Prenotazione inviata!",
+        description: "La tua prenotazione è stata inviata al ristorante. Riceverai una notifica quando verrà confermata."
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Booking creation error:', error);
       toast({
         title: "Errore",
-        description: "Errore nella creazione della prenotazione",
+        description: "Errore nella creazione della prenotazione. Riprova più tardi.",
         variant: "destructive"
       });
     }
@@ -49,14 +61,26 @@ export const useUpdateBookingStatus = () => {
   return useMutation({
     mutationFn: ({ bookingId, status }: { bookingId: string; status: Booking['status'] }) => 
       bookingService.updateBookingStatus(bookingId, status),
-    onSuccess: () => {
+    onSuccess: (updatedBooking) => {
+      // Aggiorna tutte le query delle prenotazioni
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      
+      let toastMessage = "Stato prenotazione aggiornato";
+      if (updatedBooking.status === 'confirmed') {
+        toastMessage = "Prenotazione confermata! Il cliente riceverà una notifica.";
+      } else if (updatedBooking.status === 'completed') {
+        toastMessage = "Cliente verificato! Ora può lasciare una recensione.";
+      } else if (updatedBooking.status === 'cancelled') {
+        toastMessage = "Prenotazione annullata.";
+      }
+      
       toast({
         title: "Aggiornato!",
-        description: "Stato prenotazione aggiornato"
+        description: toastMessage
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Booking update error:', error);
       toast({
         title: "Errore",
         description: "Errore nell'aggiornamento della prenotazione",
