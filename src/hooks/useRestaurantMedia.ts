@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
@@ -21,7 +22,7 @@ export interface Video {
 }
 
 // Mock data espanso per foto
-const mockPhotos: Photo[] = [
+const initialMockPhotos: Photo[] = [
   {
     id: '1',
     url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop',
@@ -67,7 +68,7 @@ const mockPhotos: Photo[] = [
 ];
 
 // Mock data espanso per video
-const mockVideos: Video[] = [
+const initialMockVideos: Video[] = [
   {
     id: '1',
     url: 'https://www.w3schools.com/html/mov_bbb.mp4',
@@ -97,12 +98,16 @@ const mockVideos: Video[] = [
   }
 ];
 
+// Stato globale per i dati mock
+let mockPhotos = [...initialMockPhotos];
+let mockVideos = [...initialMockVideos];
+
 export const useRestaurantPhotos = (restaurantId: string) => {
   return useQuery({
     queryKey: ['restaurant-photos', restaurantId],
     queryFn: async () => {
       await new Promise(resolve => setTimeout(resolve, 500));
-      return mockPhotos.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+      return [...mockPhotos].sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
     },
     enabled: !!restaurantId,
   });
@@ -113,7 +118,7 @@ export const useRestaurantVideos = (restaurantId: string) => {
     queryKey: ['restaurant-videos', restaurantId],
     queryFn: async () => {
       await new Promise(resolve => setTimeout(resolve, 500));
-      return mockVideos.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+      return [...mockVideos].sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
     },
     enabled: !!restaurantId,
   });
@@ -127,7 +132,7 @@ export const usePhotosByCategory = (restaurantId: string, category?: string) => 
       const filtered = category && category !== 'tutte' 
         ? mockPhotos.filter(photo => photo.category === category)
         : mockPhotos;
-      return filtered.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+      return [...filtered].sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
     },
     enabled: !!restaurantId,
   });
@@ -141,7 +146,7 @@ export const useVideosByCategory = (restaurantId: string, category?: string) => 
       const filtered = category && category !== 'tutti' 
         ? mockVideos.filter(video => video.category === category)
         : mockVideos;
-      return filtered.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
+      return [...filtered].sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime());
     },
     enabled: !!restaurantId,
   });
@@ -154,7 +159,12 @@ export const useAddPhoto = () => {
     mutationFn: async (photoData: Omit<Photo, 'id'>) => {
       // Simula upload foto
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return { id: Date.now().toString(), ...photoData };
+      const newPhoto = { id: Date.now().toString(), ...photoData };
+      
+      // Aggiungi al mock data
+      mockPhotos = [newPhoto, ...mockPhotos];
+      
+      return newPhoto;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurant-photos'] });
@@ -180,6 +190,10 @@ export const useDeletePhoto = () => {
     mutationFn: async (photoId: string) => {
       // Simula eliminazione foto
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Rimuovi dal mock data
+      mockPhotos = mockPhotos.filter(photo => photo.id !== photoId);
+      
       return photoId;
     },
     onSuccess: () => {
@@ -206,7 +220,12 @@ export const useAddVideo = () => {
     mutationFn: async (videoData: Omit<Video, 'id'>) => {
       // Simula upload video
       await new Promise(resolve => setTimeout(resolve, 2000));
-      return { id: Date.now().toString(), ...videoData };
+      const newVideo = { id: Date.now().toString(), ...videoData };
+      
+      // Aggiungi al mock data
+      mockVideos = [newVideo, ...mockVideos];
+      
+      return newVideo;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurant-videos'] });
@@ -232,6 +251,10 @@ export const useDeleteVideo = () => {
     mutationFn: async (videoId: string) => {
       // Simula eliminazione video
       await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Rimuovi dal mock data
+      mockVideos = mockVideos.filter(video => video.id !== videoId);
+      
       return videoId;
     },
     onSuccess: () => {
