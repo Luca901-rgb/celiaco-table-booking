@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { FirebaseError } from 'firebase/app';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,18 +42,41 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        await login(formData.email, formData.password, userType);
+        await login(formData.email, formData.password);
       } else {
         await register(formData.email, formData.password, formData.name, userType);
       }
       toast({
         title: "Successo!",
-        description: isLogin ? "Accesso effettuato" : "Registrazione completata"
+        description: isLogin ? "Accesso effettuato con successo" : "Registrazione completata con successo"
       });
     } catch (error) {
+      console.error('Auth error:', error);
+      let errorMessage = "Si è verificato un errore. Riprova.";
+      
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            errorMessage = "Email o password non corretti";
+            break;
+          case 'auth/email-already-in-use':
+            errorMessage = "Questa email è già registrata";
+            break;
+          case 'auth/weak-password':
+            errorMessage = "La password deve essere di almeno 6 caratteri";
+            break;
+          case 'auth/invalid-email':
+            errorMessage = "Email non valida";
+            break;
+          default:
+            errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Errore",
-        description: "Si è verificato un errore. Riprova.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
