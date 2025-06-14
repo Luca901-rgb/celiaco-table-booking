@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,104 +14,41 @@ import {
   Phone,
   MessageSquare
 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRestaurantBookings, useUpdateBookingStatus } from '@/hooks/useBookings';
+import { QRScanner } from '../components/QRScanner';
 
 const BookingManagement = () => {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [showScanner, setShowScanner] = useState(false);
   
-  const [bookings, setBookings] = useState([
-    {
-      id: '1',
-      customerName: 'Marco Rossi',
-      customerPhone: '+39 123 456 7890',
-      date: '2024-01-15',
-      time: '19:00',
-      guests: 2,
-      status: 'confirmed',
-      hasArrived: false,
-      notes: 'Tavolo vicino alla finestra',
-      qrCode: 'QR123456',
-      createdAt: '2024-01-10T10:30:00'
-    },
-    {
-      id: '2',
-      customerName: 'Anna Bianchi',
-      customerPhone: '+39 987 654 3210',
-      date: '2024-01-15',
-      time: '19:30',
-      guests: 4,
-      status: 'confirmed',
-      hasArrived: true,
-      notes: 'Compleanno - preparare dolce senza glutine',
-      qrCode: 'QR789012',
-      createdAt: '2024-01-12T14:15:00'
-    },
-    {
-      id: '3',
-      customerName: 'Luigi Verdi',
-      customerPhone: '+39 555 123 456',
-      date: '2024-01-15',
-      time: '20:00',
-      guests: 3,
-      status: 'pending',
-      hasArrived: false,
-      notes: 'Allergia alle noci',
-      qrCode: 'QR345678',
-      createdAt: '2024-01-14T16:45:00'
-    },
-    {
-      id: '4',
-      customerName: 'Sara Neri',
-      customerPhone: '+39 111 222 333',
-      date: '2024-01-16',
-      time: '20:30',
-      guests: 2,
-      status: 'confirmed',
-      hasArrived: false,
-      notes: '',
-      qrCode: 'QR901234',
-      createdAt: '2024-01-13T09:20:00'
-    }
-  ]);
+  const { data: bookings = [], isLoading } = useRestaurantBookings(user?.id || '');
+  const updateBookingStatus = useUpdateBookingStatus();
 
   const handleConfirmBooking = (id: string) => {
-    setBookings(bookings.map(booking => 
-      booking.id === id 
-        ? { ...booking, status: 'confirmed' }
-        : booking
-    ));
-    toast({
-      title: "Prenotazione confermata",
-      description: "La prenotazione è stata confermata con successo"
-    });
+    updateBookingStatus.mutate({ bookingId: id, status: 'confirmed' });
   };
 
   const handleRejectBooking = (id: string) => {
-    setBookings(bookings.map(booking => 
-      booking.id === id 
-        ? { ...booking, status: 'rejected' }
-        : booking
-    ));
-    toast({
-      title: "Prenotazione rifiutata",
-      description: "La prenotazione è stata rifiutata"
-    });
+    updateBookingStatus.mutate({ bookingId: id, status: 'cancelled' });
   };
 
-  const handleMarkArrived = (id: string) => {
-    setBookings(bookings.map(booking => 
-      booking.id === id 
-        ? { ...booking, hasArrived: true }
-        : booking
-    ));
-    toast({
-      title: "Cliente arrivato",
-      description: "Il cliente è stato segnato come arrivato"
-    });
+  const handleQRScan = (qrCode: string) => {
+    const booking = bookings.find(b => b.qrCode === qrCode);
+    if (booking && booking.status === 'confirmed') {
+      updateBookingStatus.mutate({ bookingId: booking.id, status: 'completed' });
+      setShowScanner(false);
+    }
   };
 
   const getBookingsByDate = (date: string) => {
-    return bookings.filter(booking => booking.date === date);
+    return bookings.filter(booking => {
+      const bookingDate = booking.date instanceof Date 
+        ? booking.date.toISOString().split('T')[0]
+        : new Date(booking.date).toISOString().split('T')[0];
+      return bookingDate === date;
+    });
   };
 
   const getBookingsByStatus = (status: string) => {
@@ -126,13 +62,38 @@ const BookingManagement = () => {
   const todayBookings = getBookingsByDate(formatDate(new Date()));
   const selectedDateBookings = selectedDate ? getBookingsByDate(formatDate(selectedDate)) : [];
 
+  if (isLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center">
+        <div className="text-green-600">Caricamento prenotazioni...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-green-800">Gestione Prenotazioni</h1>
-        <p className="text-green-600">Gestisci le prenotazioni del tuo ristorante</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-green-800">Gestione Prenotazioni</h1>
+          <p className="text-green-600">Gestisci le prenotazioni del tuo ristorante</p>
+        </div>
+        <Button
+          onClick={() => setShowScanner(true)}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          <QrCode className="w-4 h-4 mr-2" />
+          Scansiona QR
+        </Button>
       </div>
+
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRScanner
+          onScan={handleQRScan}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -185,9 +146,9 @@ const BookingManagement = () => {
                 <Users className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Arrivati</p>
+                <p className="text-sm text-gray-600">Completate</p>
                 <p className="text-xl font-bold text-green-600">
-                  {bookings.filter(b => b.hasArrived).length}
+                  {getBookingsByStatus('completed').length}
                 </p>
               </div>
             </div>
@@ -220,30 +181,32 @@ const BookingManagement = () => {
                             <div className="text-sm text-gray-500">{booking.guests} persone</div>
                           </div>
                           <div>
-                            <div className="font-medium text-green-800">{booking.customerName}</div>
-                            <div className="text-sm text-gray-600">{booking.customerPhone}</div>
+                            <div className="font-medium text-green-800">Cliente ID: {booking.clientId}</div>
+                            <div className="text-sm text-gray-600">QR: {booking.qrCode}</div>
                           </div>
                         </div>
-                        {booking.notes && (
+                        {booking.specialRequests && (
                           <div className="flex items-center gap-2 text-sm">
                             <MessageSquare className="w-4 h-4 text-gray-400" />
-                            <span className="text-gray-600">{booking.notes}</span>
+                            <span className="text-gray-600">{booking.specialRequests}</span>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
                           <Badge 
                             variant={
                               booking.status === 'confirmed' ? 'default' :
-                              booking.status === 'pending' ? 'secondary' : 'destructive'
+                              booking.status === 'pending' ? 'secondary' :
+                              booking.status === 'completed' ? 'default' : 'destructive'
                             }
-                            className={booking.status === 'confirmed' ? 'bg-green-600' : ''}
+                            className={
+                              booking.status === 'confirmed' ? 'bg-green-600' :
+                              booking.status === 'completed' ? 'bg-blue-600' : ''
+                            }
                           >
                             {booking.status === 'confirmed' ? 'Confermata' :
-                             booking.status === 'pending' ? 'In Attesa' : 'Rifiutata'}
+                             booking.status === 'pending' ? 'In Attesa' :
+                             booking.status === 'completed' ? 'Completata' : 'Annullata'}
                           </Badge>
-                          {booking.hasArrived && (
-                            <Badge className="bg-blue-600">Arrivato</Badge>
-                          )}
                         </div>
                       </div>
                       
@@ -268,26 +231,17 @@ const BookingManagement = () => {
                             </Button>
                           </>
                         )}
-                        {booking.status === 'confirmed' && !booking.hasArrived && (
+                        {booking.status === 'confirmed' && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleMarkArrived(booking.id)}
+                            onClick={() => setShowScanner(true)}
                             className="border-green-200 text-green-600"
                           >
                             <QrCode className="w-4 h-4 mr-1" />
                             Scansiona QR
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(`tel:${booking.customerPhone}`, '_self')}
-                          className="border-green-200 text-green-600"
-                        >
-                          <Phone className="w-4 h-4 mr-1" />
-                          Chiama
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -338,23 +292,28 @@ const BookingManagement = () => {
                               <div className="text-sm text-gray-500">{booking.guests} persone</div>
                             </div>
                             <div>
-                              <div className="font-medium text-green-800">{booking.customerName}</div>
-                              <div className="text-sm text-gray-600">{booking.customerPhone}</div>
+                              <div className="font-medium text-green-800">Cliente: {booking.clientId}</div>
+                              <div className="text-sm text-gray-600">QR: {booking.qrCode}</div>
                             </div>
                           </div>
-                          {booking.notes && (
-                            <p className="text-sm text-gray-600 mt-2">{booking.notes}</p>
+                          {booking.specialRequests && (
+                            <p className="text-sm text-gray-600 mt-2">{booking.specialRequests}</p>
                           )}
                         </div>
                         <Badge 
                           variant={
                             booking.status === 'confirmed' ? 'default' :
-                            booking.status === 'pending' ? 'secondary' : 'destructive'
+                            booking.status === 'pending' ? 'secondary' :
+                            booking.status === 'completed' ? 'default' : 'destructive'
                           }
-                          className={booking.status === 'confirmed' ? 'bg-green-600' : ''}
+                          className={
+                            booking.status === 'confirmed' ? 'bg-green-600' :
+                            booking.status === 'completed' ? 'bg-blue-600' : ''
+                          }
                         >
                           {booking.status === 'confirmed' ? 'Confermata' :
-                           booking.status === 'pending' ? 'In Attesa' : 'Rifiutata'}
+                           booking.status === 'pending' ? 'In Attesa' :
+                           booking.status === 'completed' ? 'Completata' : 'Annullata'}
                         </Badge>
                       </div>
                     </div>
@@ -385,19 +344,27 @@ const BookingManagement = () => {
                       <div className="space-y-2">
                         <div className="flex items-center gap-4">
                           <div className="text-center">
-                            <div className="font-semibold text-green-800">{booking.date}</div>
+                            <div className="font-semibold text-green-800">
+                              {booking.date instanceof Date 
+                                ? booking.date.toLocaleDateString('it-IT')
+                                : new Date(booking.date).toLocaleDateString('it-IT')
+                              }
+                            </div>
                             <div className="text-sm text-gray-500">{booking.time} - {booking.guests} persone</div>
                           </div>
                           <div>
-                            <div className="font-medium text-green-800">{booking.customerName}</div>
-                            <div className="text-sm text-gray-600">{booking.customerPhone}</div>
+                            <div className="font-medium text-green-800">Cliente: {booking.clientId}</div>
+                            <div className="text-sm text-gray-600">QR: {booking.qrCode}</div>
                           </div>
                         </div>
-                        {booking.notes && (
-                          <p className="text-sm text-gray-600">{booking.notes}</p>
+                        {booking.specialRequests && (
+                          <p className="text-sm text-gray-600">{booking.specialRequests}</p>
                         )}
                         <div className="text-xs text-gray-500">
-                          Richiesta il: {new Date(booking.createdAt).toLocaleString('it-IT')}
+                          Richiesta il: {booking.createdAt instanceof Date 
+                            ? booking.createdAt.toLocaleString('it-IT')
+                            : new Date(booking.createdAt).toLocaleString('it-IT')
+                          }
                         </div>
                       </div>
                       
