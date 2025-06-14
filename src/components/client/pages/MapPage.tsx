@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRestaurants } from "@/hooks/useRestaurants";
+import { useGeolocation } from "@/hooks/useGeolocation";
 import MapWithMarkers from "../components/MapWithMarkers";
 
 const MapPage = () => {
   const [mapboxToken, setMapboxToken] = useState("");
   const { data: restaurants = [], isLoading } = useRestaurants();
+  const { location, error: locationError, loading: locationLoading } = useGeolocation();
 
   return (
     <div className="h-screen flex flex-col">
@@ -22,6 +24,24 @@ const MapPage = () => {
             Filtri
           </Button>
         </div>
+        
+        {/* Location Status */}
+        {locationLoading && (
+          <div className="mt-2 text-sm text-blue-600">
+            📍 Rilevamento posizione in corso...
+          </div>
+        )}
+        {location && !locationLoading && (
+          <div className="mt-2 text-sm text-green-600">
+            📍 Posizione rilevata - Le distanze sono calcolate dalla tua posizione
+          </div>
+        )}
+        {locationError && (
+          <div className="mt-2 text-sm text-amber-600">
+            ⚠️ Posizione non disponibile - Concedi i permessi per vedere le distanze
+          </div>
+        )}
+        
         <div className="mt-3 flex flex-col gap-1">
           <label className="text-xs text-gray-500 font-medium">
             Inserisci il tuo Mapbox Public Token:

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useAverageRating } from '@/hooks/useReviews';
+import { useGeolocation, calculateDistance } from '@/hooks/useGeolocation';
 import { RestaurantFilters, FilterOptions } from '../components/RestaurantFilters';
 import { RestaurantCard } from '../components/RestaurantCard';
 import { RestaurantProfile, ClientProfile } from '@/types';
@@ -10,6 +11,7 @@ import { RestaurantProfile, ClientProfile } from '@/types';
 const HomePage = () => {
   const { user, profile } = useAuth();
   const clientProfile = profile as ClientProfile;
+  const { location: userLocation } = useGeolocation();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
@@ -63,8 +65,47 @@ const HomePage = () => {
       );
     }
 
+    // Distance filter (only if user location is available)
+    if (userLocation && filters.distance) {
+      filtered = filtered.filter(restaurant => {
+        if (!restaurant.latitude || !restaurant.longitude) return true;
+        
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          restaurant.latitude,
+          restaurant.longitude
+        );
+        
+        return distance <= filters.distance!;
+      });
+    }
+
+    // Sort by distance if user location is available
+    if (userLocation) {
+      filtered.sort((a, b) => {
+        if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) return 0;
+        
+        const distanceA = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          a.latitude,
+          a.longitude
+        );
+        
+        const distanceB = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          b.latitude,
+          b.longitude
+        );
+        
+        return distanceA - distanceB;
+      });
+    }
+
     setFilteredRestaurants(filtered);
-  }, [restaurants, searchTerm, filters]);
+  }, [restaurants, searchTerm, filters, userLocation]);
 
   if (isLoading) {
     return (
@@ -84,6 +125,11 @@ const HomePage = () => {
         <p className="text-green-600">
           Trova il tuo ristorante senza glutine perfetto
         </p>
+        {userLocation && (
+          <p className="text-sm text-blue-600">
+            📍 I ristoranti sono ordinati per distanza dalla tua posizione
+          </p>
+        )}
       </div>
 
       {/* Allergen Alert */}

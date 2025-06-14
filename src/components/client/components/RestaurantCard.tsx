@@ -2,10 +2,11 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, MapPin, Clock, Phone, Heart, Calendar } from 'lucide-react';
+import { Star, MapPin, Clock, Phone, Heart, Calendar, Navigation } from 'lucide-react';
 import { RestaurantProfile } from '@/types';
 import { Link } from 'react-router-dom';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useGeolocation, calculateDistance, formatDistance } from '@/hooks/useGeolocation';
 
 interface RestaurantCardProps {
   restaurant: RestaurantProfile;
@@ -19,6 +20,7 @@ export const RestaurantCard = ({
   totalReviews = 0
 }: RestaurantCardProps) => {
   const { toggleFavorite, isFavorite, loading } = useFavorites();
+  const { location: userLocation } = useGeolocation();
 
   const formatOpeningHours = (day: string) => {
     const hours = restaurant.openingHours[day];
@@ -41,6 +43,28 @@ export const RestaurantCard = ({
     }
   };
 
+  const getDistanceToRestaurant = (): string | null => {
+    if (!userLocation || !restaurant.latitude || !restaurant.longitude) {
+      return null;
+    }
+    
+    const distance = calculateDistance(
+      userLocation.latitude,
+      userLocation.longitude,
+      restaurant.latitude,
+      restaurant.longitude
+    );
+    
+    return formatDistance(distance);
+  };
+
+  const openInGoogleMaps = () => {
+    if (restaurant.latitude && restaurant.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}&travelmode=driving`;
+      window.open(url, '_blank');
+    }
+  };
+
   const handleFavoriteClick = () => {
     if (!loading) {
       toggleFavorite(restaurant.id);
@@ -48,6 +72,7 @@ export const RestaurantCard = ({
   };
 
   const isRestaurantFavorite = isFavorite(restaurant.id);
+  const distance = getDistanceToRestaurant();
 
   return (
     <Card className="border-green-200 hover:shadow-lg transition-shadow">
@@ -76,6 +101,13 @@ export const RestaurantCard = ({
             className={`w-4 h-4 ${isRestaurantFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`}
           />
         </Button>
+
+        {/* Distance Badge */}
+        {distance && (
+          <div className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+            📍 {distance}
+          </div>
+        )}
       </div>
 
       <CardHeader className="pb-2">
@@ -156,12 +188,24 @@ export const RestaurantCard = ({
               Visualizza Dettagli
             </Button>
           </Link>
-          <Link to={`/client/restaurant/${restaurant.id}/book`} className="flex-1">
-            <Button className="w-full bg-green-600 hover:bg-green-700">
-              <Calendar className="w-4 h-4 mr-2" />
-              Prenota
-            </Button>
-          </Link>
+          <div className="flex gap-2 flex-1">
+            <Link to={`/client/restaurant/${restaurant.id}/book`} className="flex-1">
+              <Button className="w-full bg-green-600 hover:bg-green-700">
+                <Calendar className="w-4 h-4 mr-2" />
+                Prenota
+              </Button>
+            </Link>
+            {restaurant.latitude && restaurant.longitude && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openInGoogleMaps}
+                className="px-3"
+              >
+                <Navigation className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
