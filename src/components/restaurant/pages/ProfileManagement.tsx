@@ -229,8 +229,8 @@ const ProfileManagement = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           {days.map((day) => (
-            <div key={day} className="flex items-center gap-3 text-sm">
-              <div className="w-16 text-sm font-medium text-green-800 flex-shrink-0">
+            <div key={day} className="flex items-center gap-2 text-sm">
+              <div className="w-12 md:w-16 text-xs md:text-sm font-medium text-green-800 flex-shrink-0">
                 {dayNames[day as keyof typeof dayNames]}
               </div>
               
@@ -254,7 +254,7 @@ const ProfileManagement = () => {
               />
 
               {!profileData.openingHours[day as keyof typeof profileData.openingHours].closed ? (
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
                   <Input
                     type="time"
                     value={profileData.openingHours[day as keyof typeof profileData.openingHours].open}
@@ -273,9 +273,9 @@ const ProfileManagement = () => {
                       }
                     }}
                     disabled={!isEditing}
-                    className="w-20 border-green-200 focus:border-green-500 text-sm"
+                    className="w-16 md:w-20 border-green-200 focus:border-green-500 text-xs md:text-sm p-1 h-8"
                   />
-                  <span className="text-gray-500">-</span>
+                  <span className="text-gray-500 text-xs">-</span>
                   <Input
                     type="time"
                     value={profileData.openingHours[day as keyof typeof profileData.openingHours].close}
@@ -294,11 +294,11 @@ const ProfileManagement = () => {
                       }
                     }}
                     disabled={!isEditing}
-                    className="w-20 border-green-200 focus:border-green-500 text-sm"
+                    className="w-16 md:w-20 border-green-200 focus:border-green-500 text-xs md:text-sm p-1 h-8"
                   />
                 </div>
               ) : (
-                <span className="text-gray-500 italic text-sm flex-1">Chiuso</span>
+                <span className="text-gray-500 italic text-xs md:text-sm flex-1">Chiuso</span>
               )}
             </div>
           ))}
