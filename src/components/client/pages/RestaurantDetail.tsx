@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRestaurant } from '@/hooks/useRestaurants';
 import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
 import { ReviewsList } from '../components/ReviewsList';
+import MenuSection from '../components/MenuSection';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -134,11 +135,16 @@ const RestaurantDetail = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="reviews" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="menu" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="menu">Menù</TabsTrigger>
             <TabsTrigger value="reviews">Recensioni</TabsTrigger>
             <TabsTrigger value="info">Informazioni</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="menu" className="space-y-4">
+            <MenuSection restaurantId={id!} />
+          </TabsContent>
           
           <TabsContent value="reviews" className="space-y-4">
             <ReviewsList reviews={reviews} isLoading={reviewsLoading} />

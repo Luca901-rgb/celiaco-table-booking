@@ -1,47 +1,63 @@
 
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc,
-  query, 
-  where, 
-  orderBy
-} from 'firebase/firestore';
-import { db } from '@/config/firebase';
 import { MenuItem } from '@/types';
+
+// Mock data per simulare il backend
+let menuItems: MenuItem[] = [
+  {
+    id: '1',
+    name: 'Bruschetta Senza Glutine',
+    description: 'Pane artigianale senza glutine con pomodori freschi, basilico e olio extravergine',
+    price: 8.50,
+    category: 'antipasti',
+    allergens: ['pomodoro'],
+    isGlutenFree: true,
+    restaurantId: 'rest1',
+    available: true
+  },
+  {
+    id: '2',
+    name: 'Pasta alla Carbonara',
+    description: 'Pasta di riso con guanciale croccante, uova fresche e pecorino romano DOP',
+    price: 14.00,
+    category: 'primi',
+    allergens: ['uova', 'latticini'],
+    isGlutenFree: true,
+    restaurantId: 'rest1',
+    available: true
+  }
+];
 
 export const menuService = {
   // Ottieni menu di un ristorante
   async getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {
-    const q = query(
-      collection(db, 'menuItems'),
-      where('restaurantId', '==', restaurantId),
-      where('available', '==', true),
-      orderBy('category'),
-      orderBy('name')
-    );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MenuItem));
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return menuItems.filter(item => item.restaurantId === restaurantId && item.available);
   },
 
   // Aggiungi nuovo item al menu
   async addMenuItem(menuItem: Omit<MenuItem, 'id'>): Promise<string> {
-    const docRef = await addDoc(collection(db, 'menuItems'), menuItem);
-    return docRef.id;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const newItem: MenuItem = {
+      ...menuItem,
+      id: `item-${Date.now()}`
+    };
+    menuItems.push(newItem);
+    return newItem.id;
   },
 
   // Aggiorna item del menu
   async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<void> {
-    await updateDoc(doc(db, 'menuItems', id), updates);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const index = menuItems.findIndex(item => item.id === id);
+    if (index !== -1) {
+      menuItems[index] = { ...menuItems[index], ...updates };
+    }
   },
 
   // Elimina item dal menu
   async deleteMenuItem(id: string): Promise<void> {
-    await deleteDoc(doc(db, 'menuItems', id));
+    await new Promise(resolve => setTimeout(resolve, 300));
+    menuItems = menuItems.filter(item => item.id !== id);
   },
 
   // Cerca items per allergie
