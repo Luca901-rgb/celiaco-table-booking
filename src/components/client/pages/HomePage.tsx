@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurants } from '@/hooks/useRestaurants';
@@ -74,11 +73,15 @@ const HomePage = () => {
       console.log('After gluten free filter:', filtered.length);
     }
 
-    // Distance filter (only if user location is available)
+    // Distance filter (only if user location is available AND restaurant has coordinates)
     if (userLocation && filters.distance) {
       console.log('Applying distance filter:', filters.distance);
       filtered = filtered.filter(restaurant => {
-        if (!restaurant.latitude || !restaurant.longitude) return true;
+        // Se il ristorante non ha coordinate, lo manteniamo (non lo filtriamo)
+        if (!restaurant.latitude || !restaurant.longitude) {
+          console.log(`Restaurant ${restaurant.name} has no coordinates, keeping it`);
+          return true;
+        }
         
         const distance = calculateDistance(
           userLocation.latitude,
@@ -87,6 +90,7 @@ const HomePage = () => {
           restaurant.longitude
         );
         
+        console.log(`Restaurant ${restaurant.name} distance: ${distance}km`);
         return distance <= filters.distance!;
       });
       console.log('After distance filter:', filtered.length);
