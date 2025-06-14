@@ -8,12 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRestaurant } from '@/hooks/useRestaurants';
 import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/contexts/AuthContext';
 import { ReviewsList } from '../components/ReviewsList';
 import MenuSection from '../components/MenuSection';
 import RestaurantGallery from '../components/RestaurantGallery';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
 
   const { data: restaurant, isLoading } = useRestaurant(id!);
@@ -46,6 +48,9 @@ const RestaurantDetail = () => {
     }
   };
 
+  // Check if user can review (simplified for now - in production should check QR scan history)
+  const canReview = user && reviews.some(review => review.clientId === user.id);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Image */}
@@ -54,11 +59,11 @@ const RestaurantDetail = () => {
           <img
             src={restaurant.coverImage}
             alt={restaurant.name}
-            className="w-full h-64 object-cover"
+            className="w-full h-48 md:h-64 object-cover"
           />
         ) : (
-          <div className="w-full h-64 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-            <span className="text-green-600 text-2xl font-medium">{restaurant.name}</span>
+          <div className="w-full h-48 md:h-64 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+            <span className="text-green-600 text-xl md:text-2xl font-medium">{restaurant.name}</span>
           </div>
         )}
         
@@ -91,92 +96,99 @@ const RestaurantDetail = () => {
       </div>
 
       {/* Restaurant Info */}
-      <div className="p-4 space-y-6">
-        <div className="space-y-3">
-          <h1 className="text-2xl font-bold text-gray-900">{restaurant.name}</h1>
+      <div className="p-4 space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">{restaurant.name}</h1>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1">
             {restaurant.certifications?.map((cert) => (
-              <Badge key={cert} variant="secondary" className="bg-green-100 text-green-800">
+              <Badge key={cert} variant="secondary" className="bg-green-100 text-green-800 text-xs">
                 {cert}
               </Badge>
             ))}
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex items-center space-x-2">
-              <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium">{averageRating.toFixed(1)}</span>
-              <span className="text-gray-500">({totalReviews} recensioni)</span>
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <span className="font-medium text-sm">{averageRating.toFixed(1)}</span>
+              <span className="text-gray-500 text-sm">({totalReviews} recensioni)</span>
             </div>
             
             <div className="flex items-center space-x-2 text-gray-600">
-              <MapPin className="w-5 h-5" />
-              <span>{restaurant.address}</span>
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm">{restaurant.address}</span>
             </div>
             
             {restaurant.phone && (
               <div className="flex items-center space-x-2 text-gray-600">
-                <Phone className="w-5 h-5" />
-                <span>{restaurant.phone}</span>
+                <Phone className="w-4 h-4" />
+                <span className="text-sm">{restaurant.phone}</span>
               </div>
             )}
           </div>
           
           {restaurant.description && (
-            <p className="text-gray-700">{restaurant.description}</p>
+            <p className="text-gray-700 text-sm leading-relaxed">{restaurant.description}</p>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Link to={`/client/restaurant/${id}/book`} className="flex-1">
-            <Button className="w-full bg-green-600 hover:bg-green-700">
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-sm">
               <Calendar className="w-4 h-4 mr-2" />
               Prenota
             </Button>
           </Link>
-          <Link to={`/client/restaurant/${id}/review`} className="flex-1">
-            <Button variant="outline" className="w-full">
+          {canReview ? (
+            <Link to={`/client/restaurant/${id}/review`} className="flex-1">
+              <Button variant="outline" className="w-full text-sm">
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Recensisci
+              </Button>
+            </Link>
+          ) : (
+            <Button variant="outline" disabled className="flex-1 text-sm">
               <MessageSquare className="w-4 h-4 mr-2" />
-              Recensisci
+              Recensisci dopo visita
             </Button>
-          </Link>
+          )}
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="menu" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="menu">Menù</TabsTrigger>
-            <TabsTrigger value="gallery">Gallery</TabsTrigger>
-            <TabsTrigger value="reviews">Recensioni</TabsTrigger>
-            <TabsTrigger value="info">Informazioni</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 h-10">
+            <TabsTrigger value="menu" className="text-xs">Menù</TabsTrigger>
+            <TabsTrigger value="gallery" className="text-xs">Gallery</TabsTrigger>
+            <TabsTrigger value="reviews" className="text-xs">Recensioni</TabsTrigger>
+            <TabsTrigger value="info" className="text-xs">Info</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="menu" className="space-y-4">
+          <TabsContent value="menu" className="space-y-3 mt-4">
             <MenuSection restaurantId={id!} />
           </TabsContent>
           
-          <TabsContent value="gallery" className="space-y-4">
+          <TabsContent value="gallery" className="space-y-3 mt-4">
             <RestaurantGallery restaurantId={id!} />
           </TabsContent>
           
-          <TabsContent value="reviews" className="space-y-4">
+          <TabsContent value="reviews" className="space-y-3 mt-4">
             <ReviewsList reviews={reviews} isLoading={reviewsLoading} />
           </TabsContent>
           
-          <TabsContent value="info" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Informazioni</CardTitle>
+          <TabsContent value="info" className="space-y-3 mt-4">
+            <Card className="border-green-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Informazioni</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 text-sm">
                 {restaurant.cuisineType && restaurant.cuisineType.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-2">Tipo di cucina:</h4>
-                    <div className="flex flex-wrap gap-2">
+                    <h4 className="font-medium mb-1">Tipo di cucina:</h4>
+                    <div className="flex flex-wrap gap-1">
                       {restaurant.cuisineType.map((cuisine) => (
-                        <Badge key={cuisine} variant="secondary">
+                        <Badge key={cuisine} variant="secondary" className="text-xs">
                           {cuisine}
                         </Badge>
                       ))}
@@ -187,7 +199,7 @@ const RestaurantDetail = () => {
                 {restaurant.priceRange && (
                   <div>
                     <h4 className="font-medium mb-1">Fascia di prezzo:</h4>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-gray-600">
                       {restaurant.priceRange === 'low' && 'Economico (€)'}
                       {restaurant.priceRange === 'medium' && 'Medio (€€)'}
                       {restaurant.priceRange === 'high' && 'Alto (€€€)'}
@@ -202,7 +214,7 @@ const RestaurantDetail = () => {
                       href={restaurant.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-green-600 text-sm hover:underline"
+                      className="text-green-600 hover:underline break-all"
                     >
                       {restaurant.website}
                     </a>
