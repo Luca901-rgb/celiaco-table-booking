@@ -80,39 +80,40 @@ const ProfileManagement = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-green-800">Gestione Profilo</h1>
-          <p className="text-green-600">Modifica le informazioni del tuo ristorante</p>
+          <h1 className="text-2xl font-bold text-green-800">Gestione Profilo</h1>
+          <p className="text-green-600 text-sm">Modifica le informazioni del tuo ristorante</p>
         </div>
         <Button
           onClick={() => isEditing ? handleSave() : setIsEditing(true)}
           className="bg-green-600 hover:bg-green-700"
+          size="sm"
         >
           {isEditing ? (
             <>
               <Save className="w-4 h-4 mr-2" />
-              Salva Modifiche
+              Salva
             </>
           ) : (
-            'Modifica Profilo'
+            'Modifica'
           )}
         </Button>
       </div>
 
       {/* Cover Image */}
       <Card className="border-green-200">
-        <CardHeader>
-          <CardTitle className="text-green-800">Immagine di Copertina</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-green-800 text-lg">Immagine di Copertina</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="relative">
             <img
               src={profileData.coverImage}
               alt="Cover"
-              className="w-full h-48 object-cover rounded-lg"
+              className="w-full h-32 object-cover rounded-lg"
             />
             {isEditing && (
               <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
@@ -123,7 +124,7 @@ const ProfileManagement = () => {
                     onChange={handleImageUpload}
                     className="hidden"
                   />
-                  <Button variant="secondary">
+                  <Button variant="secondary" size="sm">
                     <Upload className="w-4 h-4 mr-2" />
                     Cambia Immagine
                   </Button>
@@ -136,13 +137,13 @@ const ProfileManagement = () => {
 
       {/* Basic Information */}
       <Card className="border-green-200">
-        <CardHeader>
-          <CardTitle className="text-green-800">Informazioni Base</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-green-800 text-lg">Informazioni Base</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Nome Ristorante</Label>
+              <Label htmlFor="name" className="text-sm">Nome Ristorante</Label>
               <Input
                 id="name"
                 value={profileData.name}
@@ -152,7 +153,7 @@ const ProfileManagement = () => {
               />
             </div>
             <div>
-              <Label htmlFor="phone">Telefono</Label>
+              <Label htmlFor="phone" className="text-sm">Telefono</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -165,7 +166,7 @@ const ProfileManagement = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-sm">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -178,7 +179,7 @@ const ProfileManagement = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="website">Sito Web</Label>
+              <Label htmlFor="website" className="text-sm">Sito Web</Label>
               <Input
                 id="website"
                 value={profileData.website}
@@ -190,7 +191,7 @@ const ProfileManagement = () => {
           </div>
           
           <div>
-            <Label htmlFor="address">Indirizzo</Label>
+            <Label htmlFor="address" className="text-sm">Indirizzo</Label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
               <Textarea
@@ -205,7 +206,7 @@ const ProfileManagement = () => {
           </div>
 
           <div>
-            <Label htmlFor="description">Descrizione</Label>
+            <Label htmlFor="description" className="text-sm">Descrizione</Label>
             <Textarea
               id="description"
               value={profileData.description}
@@ -220,16 +221,16 @@ const ProfileManagement = () => {
 
       {/* Opening Hours */}
       <Card className="border-green-200">
-        <CardHeader>
-          <CardTitle className="text-green-800 flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
             <Clock className="w-5 h-5" />
             Orari di Apertura
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {days.map((day) => (
-            <div key={day} className="flex items-center gap-4">
-              <div className="w-20 text-sm font-medium text-green-800">
+            <div key={day} className="flex items-center gap-3 text-sm">
+              <div className="w-16 text-sm font-medium text-green-800 flex-shrink-0">
                 {dayNames[day as keyof typeof dayNames]}
               </div>
               
@@ -253,7 +254,7 @@ const ProfileManagement = () => {
               />
 
               {!profileData.openingHours[day as keyof typeof profileData.openingHours].closed ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-1">
                   <Input
                     type="time"
                     value={profileData.openingHours[day as keyof typeof profileData.openingHours].open}
@@ -272,7 +273,7 @@ const ProfileManagement = () => {
                       }
                     }}
                     disabled={!isEditing}
-                    className="w-24 border-green-200 focus:border-green-500"
+                    className="w-20 border-green-200 focus:border-green-500 text-sm"
                   />
                   <span className="text-gray-500">-</span>
                   <Input
@@ -293,11 +294,11 @@ const ProfileManagement = () => {
                       }
                     }}
                     disabled={!isEditing}
-                    className="w-24 border-green-200 focus:border-green-500"
+                    className="w-20 border-green-200 focus:border-green-500 text-sm"
                   />
                 </div>
               ) : (
-                <span className="text-gray-500 italic">Chiuso</span>
+                <span className="text-gray-500 italic text-sm flex-1">Chiuso</span>
               )}
             </div>
           ))}
@@ -306,8 +307,8 @@ const ProfileManagement = () => {
 
       {/* Certifications */}
       <Card className="border-green-200">
-        <CardHeader>
-          <CardTitle className="text-green-800 flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-green-800 flex items-center gap-2 text-lg">
             <Award className="w-5 h-5" />
             Certificazioni
           </CardTitle>
@@ -322,7 +323,7 @@ const ProfileManagement = () => {
             ))}
           </div>
           {isEditing && (
-            <Button variant="outline" className="mt-3 border-green-200 text-green-600">
+            <Button variant="outline" className="mt-3 border-green-200 text-green-600" size="sm">
               Aggiungi Certificazione
             </Button>
           )}

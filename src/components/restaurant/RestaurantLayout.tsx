@@ -29,12 +29,12 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const navItems = [
-    { path: '/restaurant/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/restaurant/profile', icon: Settings, label: 'Profilo' },
-    { path: '/restaurant/menu', icon: Menu, label: 'Menù' },
-    { path: '/restaurant/media', icon: Image, label: 'Media' },
-    { path: '/restaurant/bookings', icon: Calendar, label: 'Prenotazioni' },
-    { path: '/restaurant/reviews', icon: Star, label: 'Recensioni' }
+    { path: '/restaurant/dashboard', icon: LayoutDashboard, label: 'Dashboard', shortLabel: 'Home' },
+    { path: '/restaurant/profile', icon: Settings, label: 'Profilo', shortLabel: 'Profilo' },
+    { path: '/restaurant/menu', icon: Menu, label: 'Menù', shortLabel: 'Menù' },
+    { path: '/restaurant/media', icon: Image, label: 'Media', shortLabel: 'Media' },
+    { path: '/restaurant/bookings', icon: Calendar, label: 'Prenotazioni', shortLabel: 'Prenot.' },
+    { path: '/restaurant/reviews', icon: Star, label: 'Recensioni', shortLabel: 'Recens.' }
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -115,22 +115,22 @@ const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-green-200 shadow-lg">
-        <div className="grid grid-cols-6 gap-1 p-2">
-          {navItems.map(({ path, icon: Icon, label }) => (
+        <div className="grid grid-cols-6 gap-0 p-1">
+          {navItems.map(({ path, icon: Icon, shortLabel }) => (
             <Button
               key={path}
               variant="ghost"
               size="sm"
               onClick={() => navigate(path)}
               className={cn(
-                "flex flex-col items-center justify-center h-12 px-1 py-1 transition-all duration-200",
+                "flex flex-col items-center justify-center h-14 px-1 py-1 transition-all duration-200",
                 isActive(path)
                   ? "bg-green-100 text-green-700"
                   : "text-gray-600 hover:text-green-600 hover:bg-green-50"
               )}
             >
               <Icon className="w-4 h-4 mb-1" />
-              <span className="text-xs font-medium leading-tight">{label.split(' ')[0]}</span>
+              <span className="text-xs font-medium leading-none">{shortLabel}</span>
             </Button>
           ))}
         </div>
