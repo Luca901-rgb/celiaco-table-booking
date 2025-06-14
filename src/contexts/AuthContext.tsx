@@ -76,43 +76,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<ClientProfile | RestaurantProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadUserProfile = async (userId: string) => {
+    try {
+      console.log('Loading user profile for:', userId);
+      const { data: userProfile, error } = await supabase
+        .from('userprofiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+        
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+      
+      if (userProfile) {
+        console.log('User profile loaded:', userProfile);
+        const typedProfile = {
+          ...userProfile,
+          user_type: userProfile.user_type as 'client' | 'restaurant'
+        } as UserProfile;
+        
+        const mappedProfile = mapProfileToAppUser(typedProfile);
+        console.log('Mapped profile:', mappedProfile);
+        return mappedProfile;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
+    console.log('Setting up auth state listener...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         
         if (session?.user) {
-          // Defer Supabase calls with setTimeout to avoid deadlocks
-          setTimeout(async () => {
-            try {
-              const { data: userProfile } = await supabase
-                .from('userprofiles')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .single();
-                
-              if (userProfile) {
-                // Cast user_type to the correct type since it should be one of these values
-                const typedProfile = {
-                  ...userProfile,
-                  user_type: userProfile.user_type as 'client' | 'restaurant'
-                } as UserProfile;
-                
-                const mappedProfile = mapProfileToAppUser(typedProfile);
-                setProfile(mappedProfile);
-                setUser({
-                  ...session.user,
-                  name: mappedProfile.name,
-                  type: mappedProfile.type
-                });
-              }
-            } catch (error) {
-              console.error('Error fetching user profile:', error);
-            }
-          }, 0);
+          console.log('User authenticated, loading profile...');
+          setLoading(true);
+          
+          const userProfile = await loadUserProfile(session.user.id);
+          
+          if (userProfile) {
+            setProfile(userProfile);
+            setUser({
+              ...session.user,
+              name: userProfile.name,
+              type: userProfile.type
+            });
+            console.log('User and profile set:', userProfile.type);
+          } else {
+            console.log('No profile found for user');
+            setUser(session.user as AppUser);
+            setProfile(null);
+          }
         } else {
+          console.log('User signed out');
           setUser(null);
           setProfile(null);
         }
@@ -121,12 +147,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        setLoading(false);
+    const initializeAuth = async () => {
+      console.log('Checking for existing session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        console.log('Existing session found, loading profile...');
+        const userProfile = await loadUserProfile(session.user.id);
+        
+        if (userProfile) {
+          setProfile(userProfile);
+          setUser({
+            ...session.user,
+            name: userProfile.name,
+            type: userProfile.type
+          });
+          console.log('Existing user and profile loaded:', userProfile.type);
+        } else {
+          setUser(session.user as AppUser);
+          setProfile(null);
+        }
       }
-    });
+      setLoading(false);
+    };
+
+    initializeAuth();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -141,9 +186,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
-    } finally {
       setLoading(false);
+      throw error;
     }
   };
 
