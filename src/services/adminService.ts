@@ -15,19 +15,35 @@ export interface AdminStats {
 
 export const adminService = {
   async login(email: string, password: string) {
-    // Per semplicità, usiamo una verifica diretta con la tabella admins
+    console.log('Admin login attempt for:', email);
+    
+    // Verifica che l'email sia quella dell'admin configurato
+    if (email !== 'lcammarota24@gmail.com') {
+      throw new Error('Email amministratore non valida');
+    }
+    
+    // Verifica che la password sia quella corretta
+    if (password !== 'Camma8790!') {
+      throw new Error('Password amministratore non corretta');
+    }
+    
+    // Verifica che l'admin esista nel database
     const { data, error } = await supabase
       .from('admins')
       .select('*')
       .eq('email', email)
       .single();
     
-    if (error || !data) {
-      throw new Error('Credenziali non valide');
+    if (error) {
+      console.error('Errore query admin:', error);
+      throw new Error('Errore durante la verifica dell\'amministratore');
     }
     
-    // In un'implementazione reale, dovresti verificare l'hash della password
-    // Per ora accettiamo qualsiasi password per l'admin configurato
+    if (!data) {
+      throw new Error('Amministratore non trovato nel database');
+    }
+    
+    console.log('Admin login successful');
     return { admin: data };
   },
 
