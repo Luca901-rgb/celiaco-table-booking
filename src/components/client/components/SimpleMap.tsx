@@ -13,22 +13,29 @@ interface SimpleMapProps {
 const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<any>(null);
-  const [leafletLoaded, setLeafletLoaded] = useState(false);
+  const [leafletModule, setLeafletModule] = useState<any>(null);
   const [selected, setSelected] = useState<RestaurantProfile | null>(null);
   const { location: userLocation } = useGeolocation();
 
-  // Dynamically import Leaflet
+  // Carica dinamicamente Leaflet
   useEffect(() => {
+    let isMounted = true;
+
     const loadLeaflet = async () => {
       try {
-        const leafletModule = await import('leaflet');
-        const L = leafletModule.default || leafletModule;
+        console.log('Loading Leaflet module...');
         
-        // Import CSS
+        // Carica il modulo leaflet
+        const leaflet = await import('leaflet');
+        const L = leaflet.default;
+        
+        // Carica il CSS
         await import('leaflet/dist/leaflet.css');
         
-        // Fix for default markers
-        if (L.Icon?.Default?.prototype) {
+        if (!isMounted) return;
+
+        // Fix per le icone predefinite
+        if (L.Icon?.Default) {
           delete (L.Icon.Default.prototype as any)._getIconUrl;
           L.Icon.Default.mergeOptions({
             iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -37,100 +44,100 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
           });
         }
 
-        setLeafletLoaded(true);
-        return L;
+        console.log('Leaflet module loaded successfully');
+        setLeafletModule(L);
       } catch (error) {
-        console.error('Failed to load Leaflet:', error);
-        setLeafletLoaded(false);
+        console.error('Errore nel caricamento di Leaflet:', error);
       }
     };
 
     loadLeaflet();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Initialize map when Leaflet is loaded
+  // Inizializza la mappa quando Leaflet è caricato
   useEffect(() => {
-    if (!leafletLoaded || !mapContainer.current || map) return;
+    if (!leafletModule || !mapContainer.current || map) return;
 
-    const initMap = async () => {
-      try {
-        const leafletModule = await import('leaflet');
-        const L = leafletModule.default || leafletModule;
-        
-        const center: [number, number] = userLocation 
-          ? [userLocation.latitude, userLocation.longitude]
-          : [45.4642, 9.1895]; // Milan
+    const L = leafletModule;
+    
+    try {
+      console.log('Initializing map...');
+      
+      const center: [number, number] = userLocation 
+        ? [userLocation.latitude, userLocation.longitude]
+        : [45.4642, 9.1895]; // Milano
 
-        const mapInstance = L.map(mapContainer.current!).setView(center, userLocation ? 12 : 10);
+      const mapInstance = L.map(mapContainer.current).setView(center, userLocation ? 12 : 10);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(mapInstance);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+      }).addTo(mapInstance);
 
-        mapInstance.zoomControl.setPosition('topright');
-        setMap(mapInstance);
-      } catch (error) {
-        console.error('Failed to initialize map:', error);
-      }
-    };
-
-    initMap();
+      mapInstance.zoomControl.setPosition('topright');
+      setMap(mapInstance);
+      
+      console.log('Map initialized successfully');
+    } catch (error) {
+      console.error('Errore nell\'inizializzazione della mappa:', error);
+    }
 
     return () => {
       if (map) {
+        console.log('Cleaning up map...');
         map.remove();
         setMap(null);
       }
     };
-  }, [leafletLoaded, userLocation]);
+  }, [leafletModule, userLocation]);
 
-  // Add markers when map and restaurants are ready
+  // Aggiungi i marker quando la mappa e i ristoranti sono pronti
   useEffect(() => {
-    if (!map || !leafletLoaded || !restaurants.length) return;
+    if (!map || !leafletModule || !restaurants.length) return;
 
-    const addMarkers = async () => {
-      try {
-        const leafletModule = await import('leaflet');
-        const L = leafletModule.default || leafletModule;
+    const L = leafletModule;
+    
+    try {
+      console.log('Adding markers...');
 
-        // Add user location marker
-        if (userLocation) {
-          const userIcon = L.divIcon({
-            className: 'custom-user-marker',
-            html: `<div style="background: #2563eb; border: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
+      // Aggiungi marker per la posizione utente
+      if (userLocation) {
+        const userIcon = L.divIcon({
+          className: 'custom-user-marker',
+          html: `<div style="background: #2563eb; border: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        });
+
+        L.marker([userLocation.latitude, userLocation.longitude], { icon: userIcon }).addTo(map);
+      }
+
+      // Aggiungi marker per i ristoranti
+      restaurants.forEach((restaurant) => {
+        if (typeof restaurant.longitude === "number" && typeof restaurant.latitude === "number") {
+          const restaurantIcon = L.divIcon({
+            className: 'custom-restaurant-marker',
+            html: `<div style="background: #dc2626; border: 2px solid #fff; border-radius: 50%; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;">📍</div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
           });
 
-          L.marker([userLocation.latitude, userLocation.longitude], { icon: userIcon }).addTo(map);
+          const marker = L.marker([restaurant.latitude, restaurant.longitude], { icon: restaurantIcon }).addTo(map);
+          
+          marker.on('click', () => {
+            setSelected(restaurant);
+            map.setView([restaurant.latitude!, restaurant.longitude!], 15);
+          });
         }
-
-        // Add restaurant markers
-        restaurants.forEach((restaurant) => {
-          if (typeof restaurant.longitude === "number" && typeof restaurant.latitude === "number") {
-            const restaurantIcon = L.divIcon({
-              className: 'custom-restaurant-marker',
-              html: `<div style="background: #dc2626; border: 2px solid #fff; border-radius: 50%; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;">📍</div>`,
-              iconSize: [30, 30],
-              iconAnchor: [15, 30],
-            });
-
-            const marker = L.marker([restaurant.latitude, restaurant.longitude], { icon: restaurantIcon }).addTo(map);
-            
-            marker.on('click', () => {
-              setSelected(restaurant);
-              map.setView([restaurant.latitude!, restaurant.longitude!], 15);
-            });
-          }
-        });
-      } catch (error) {
-        console.error('Failed to add markers:', error);
-      }
-    };
-
-    addMarkers();
-  }, [map, restaurants, userLocation, leafletLoaded]);
+      });
+    } catch (error) {
+      console.error('Errore nell\'aggiunta dei marker:', error);
+    }
+  }, [map, restaurants, userLocation, leafletModule]);
 
   const openInGoogleMaps = (restaurant: RestaurantProfile) => {
     if (restaurant.latitude && restaurant.longitude) {
@@ -154,7 +161,7 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
     return formatDistance(distance);
   };
 
-  if (!leafletLoaded) {
+  if (!leafletModule) {
     return (
       <div className="relative w-full h-full">
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
@@ -171,7 +178,7 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
 
-      {/* Legend */}
+      {/* Legenda */}
       <div className="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur p-3 rounded-lg shadow-lg border">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow"></div>

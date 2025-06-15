@@ -21,14 +21,18 @@ export default defineConfig(({ mode }) => ({
     },
   },
   optimizeDeps: {
-    include: ['leaflet']
+    include: ['leaflet'],
+    exclude: []
   },
   build: {
     commonjsOptions: {
       include: [/leaflet/, /node_modules/]
     },
     rollupOptions: {
-      external: []
+      external: [],
+      output: {
+        globals: {}
+      }
     }
   }
 }));
