@@ -1,21 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types';
-import { DatabaseBooking } from '@/types/supabase';
 
 const mapDatabaseToBooking = (dbBooking: any): Booking => {
   return {
     id: dbBooking.id,
     clientId: dbBooking.customer_id || '',
     restaurantId: dbBooking.restaurant_id || '',
-    date: new Date(dbBooking.date),
+    date: dbBooking.date,
     time: dbBooking.time,
     guests: dbBooking.number_of_guests,
     status: dbBooking.status as Booking['status'],
     specialRequests: dbBooking.special_requests,
     qrCode: dbBooking.qr_code,
     createdAt: new Date(dbBooking.created_at || Date.now()),
-    canReview: dbBooking.can_review || false
+    canReview: dbBooking.can_review || false,
+    hasArrived: dbBooking.has_arrived || false,
+    userProfiles: dbBooking.user_profiles ? { fullName: dbBooking.user_profiles.full_name, avatarUrl: dbBooking.user_profiles.avatar_url } : null
   };
 };
 
@@ -25,7 +26,8 @@ export const bookingService = {
       .from('bookings')
       .select(`
         *,
-        restaurants(name, address)
+        restaurants(name, address),
+        user_profiles(full_name, avatar_url)
       `)
       .eq('customer_id', clientId)
       .order('date', { ascending: false });
@@ -40,7 +42,7 @@ export const bookingService = {
   async getRestaurantBookings(restaurantId: string): Promise<Booking[]> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, user_profiles(full_name, avatar_url)')
       .eq('restaurant_id', restaurantId)
       .order('date', { ascending: false });
     
@@ -58,19 +60,20 @@ export const bookingService = {
     const dbBookingData = {
       customer_id: booking.clientId,
       restaurant_id: booking.restaurantId,
-      date: booking.date.toISOString().split('T')[0],
+      date: booking.date,
       time: booking.time,
       number_of_guests: booking.guests,
       status: booking.status,
       special_requests: booking.specialRequests || null,
       qr_code: qrCode,
-      can_review: false
+      can_review: false,
+      has_arrived: booking.hasArrived || false
     };
     
     const { data, error } = await supabase
       .from('bookings')
       .insert(dbBookingData)
-      .select()
+      .select('*, user_profiles(full_name, avatar_url)')
       .single();
     
     if (error) {
@@ -91,7 +94,7 @@ export const bookingService = {
       .from('bookings')
       .update(updateData)
       .eq('id', bookingId)
-      .select()
+      .select('*, user_profiles(full_name, avatar_url)')
       .single();
     
     if (error) {
@@ -100,11 +103,26 @@ export const bookingService = {
     }
     return mapDatabaseToBooking(data);
   },
+  
+  async markAsArrived(bookingId: string, hasArrived: boolean): Promise<Booking> {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ has_arrived: hasArrived })
+      .eq('id', bookingId)
+      .select('*, user_profiles(full_name, avatar_url)')
+      .single();
+
+    if (error) {
+      console.error('Error marking booking as arrived:', error);
+      throw error;
+    }
+    return mapDatabaseToBooking(data);
+  },
 
   async getBookingById(bookingId: string): Promise<Booking | null> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*')
+      .select('*, user_profiles(full_name, avatar_url)')
       .eq('id', bookingId)
       .single();
     

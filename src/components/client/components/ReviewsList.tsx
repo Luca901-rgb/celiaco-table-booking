@@ -56,7 +56,7 @@ export const ReviewsList = ({ reviews, isLoading }: ReviewsListProps) => {
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-gray-900">{review.clientName}</h4>
                   <span className="text-xs text-gray-500">
-                    {format(new Date(review.date), 'PPP', { locale: it })}
+                    {format(new Date(review.createdAt), 'PPP', { locale: it })}
                   </span>
                 </div>
                 

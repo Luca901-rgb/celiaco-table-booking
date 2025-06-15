@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,10 +82,7 @@ export const QRCodeDisplay = ({ booking, restaurantName }: QRCodeDisplayProps) =
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="w-4 h-4 text-green-600" />
             <span className="font-medium">
-              {booking.date instanceof Date 
-                ? booking.date.toLocaleDateString('it-IT')
-                : new Date(booking.date).toLocaleDateString('it-IT')
-              }
+              {new Date(booking.date).toLocaleDateString('it-IT')}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">

@@ -1,4 +1,3 @@
-
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,9 +32,7 @@ const BookingManagement = () => {
     const today = new Date().toISOString().split('T')[0];
     
     const todayBookings = bookings.filter(booking => {
-      const bookingDate = booking.date instanceof Date 
-        ? booking.date.toISOString().split('T')[0]
-        : new Date(booking.date).toISOString().split('T')[0];
+      const bookingDate = new Date(booking.date).toISOString().split('T')[0];
       return bookingDate === today;
     });
 
@@ -126,9 +123,7 @@ const BookingManagement = () => {
 
   const getBookingsByDate = (date: string) => {
     return bookings.filter(booking => {
-      const bookingDate = booking.date instanceof Date 
-        ? booking.date.toISOString().split('T')[0]
-        : new Date(booking.date).toISOString().split('T')[0];
+      const bookingDate = new Date(booking.date).toISOString().split('T')[0];
       return bookingDate === date;
     });
   };
@@ -425,10 +420,7 @@ const BookingManagement = () => {
                         <div className="flex items-center gap-4">
                           <div className="text-center">
                             <div className="font-semibold text-green-800">
-                              {booking.date instanceof Date 
-                                ? booking.date.toLocaleDateString('it-IT')
-                                : new Date(booking.date).toLocaleDateString('it-IT')
-                              }
+                              {new Date(booking.date).toLocaleDateString('it-IT')}
                             </div>
                             <div className="text-sm text-gray-500">{booking.time} - {booking.guests} persone</div>
                           </div>
@@ -441,10 +433,7 @@ const BookingManagement = () => {
                           <p className="text-sm text-gray-600">{booking.specialRequests}</p>
                         )}
                         <div className="text-xs text-gray-500">
-                          Richiesta il: {booking.createdAt instanceof Date 
-                            ? booking.createdAt.toLocaleString('it-IT')
-                            : new Date(booking.createdAt).toLocaleString('it-IT')
-                          }
+                          Richiesta il: {new Date(booking.createdAt).toLocaleString('it-IT')}
                         </div>
                       </div>
                       
