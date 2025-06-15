@@ -20,20 +20,37 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
   const [selected, setSelected] = useState<RestaurantProfile | null>(null);
   const { location: userLocation, loading: locationLoading } = useGeolocation();
   const [mapInitialized, setMapInitialized] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Initialize map only once
   useEffect(() => {
     if (!mapboxToken || !mapContainer.current || mapInitialized) return;
 
     console.log('Initializing map with token:', mapboxToken.slice(0, 20) + '...');
+    
+    // Validate token format
+    if (!mapboxToken.startsWith('pk.')) {
+      console.error('Invalid Mapbox token format. Token should start with "pk."');
+      setMapError('Token Mapbox non valido. Deve iniziare con "pk."');
+      return;
+    }
 
     try {
       mapboxgl.accessToken = mapboxToken;
+
+      // Test if mapboxgl is available
+      if (!mapboxgl.supported()) {
+        console.error('Mapbox GL is not supported in this browser');
+        setMapError('Mapbox GL non è supportato in questo browser');
+        return;
+      }
 
       // Center map on user location or Milan
       const center: [number, number] = userLocation 
         ? [userLocation.longitude, userLocation.latitude]
         : [9.1895, 45.4642];
+
+      console.log('Creating map with center:', center);
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -49,10 +66,22 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
       map.current.on('load', () => {
         console.log('Map loaded successfully');
         setMapInitialized(true);
+        setMapError(null);
       });
 
       map.current.on('error', (e) => {
         console.error('Map error:', e);
+        setMapError('Errore nel caricamento della mappa. Verifica il token Mapbox.');
+      });
+
+      map.current.on('sourcedata', (e) => {
+        if (e.sourceId && e.isSourceLoaded) {
+          console.log('Source loaded:', e.sourceId);
+        }
+      });
+
+      map.current.on('styledata', () => {
+        console.log('Style loaded');
       });
 
       map.current.on("click", () => {
@@ -61,6 +90,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
 
     } catch (error) {
       console.error('Error initializing map:', error);
+      setMapError('Errore nell\'inizializzazione della mappa: ' + (error as Error).message);
     }
 
     return () => {
@@ -69,6 +99,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
         map.current.remove();
         map.current = null;
         setMapInitialized(false);
+        setMapError(null);
       }
     };
   }, [mapboxToken, mapContainer.current]);
@@ -77,7 +108,7 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
   useEffect(() => {
     if (!map.current || !userLocation || !mapInitialized) return;
 
-    console.log('Adding user location marker');
+    console.log('Adding user location marker at:', userLocation);
 
     const userMarkerEl = document.createElement("div");
     userMarkerEl.innerHTML = `
@@ -117,6 +148,8 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
 
     restaurants.forEach((restaurant) => {
       if (typeof restaurant.longitude === "number" && typeof restaurant.latitude === "number") {
+        console.log(`Adding marker for ${restaurant.name} at:`, restaurant.latitude, restaurant.longitude);
+        
         const el = document.createElement("div");
         el.style.cursor = 'pointer';
         el.innerHTML = `
@@ -148,6 +181,8 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
         });
 
         markers.current.push(marker);
+      } else {
+        console.log(`Restaurant ${restaurant.name} has no valid coordinates`);
       }
     });
 
@@ -196,9 +231,38 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
     <div className="relative w-full h-full">
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
       
-      {!mapInitialized && (
+      {/* Loading State */}
+      {!mapInitialized && !mapError && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-          <div className="text-green-600 font-medium">Caricamento mappa...</div>
+          <div className="text-center space-y-2">
+            <div className="text-green-600 font-medium">Caricamento mappa...</div>
+            <div className="text-sm text-gray-500">Inizializzazione Mapbox in corso</div>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {mapError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 rounded-lg p-6">
+          <div className="text-red-600 font-medium text-lg mb-2">
+            Errore Mappa
+          </div>
+          <div className="text-sm text-red-500 text-center mb-4">
+            {mapError}
+          </div>
+          <div className="text-xs text-gray-600 text-center">
+            Verifica che il token Mapbox sia valido e abbia le autorizzazioni necessarie.
+            <br />
+            Puoi ottenere un token gratuito su{" "}
+            <a
+              href="https://mapbox.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-600 underline"
+            >
+              mapbox.com
+            </a>
+          </div>
         </div>
       )}
       
@@ -208,19 +272,21 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
         </div>
       )}
 
-      {/* Legend */}
-      <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white"></div>
-          <span className="text-xs text-gray-700">La tua posizione</span>
+      {/* Legend - only show when map is loaded */}
+      {mapInitialized && !mapError && (
+        <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white"></div>
+            <span className="text-xs text-gray-700">La tua posizione</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white"></div>
+            <span className="text-xs text-gray-700">Ristoranti</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white"></div>
-          <span className="text-xs text-gray-700">Ristoranti</span>
-        </div>
-      </div>
+      )}
       
-      {selected && (
+      {selected && mapInitialized && !mapError && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[90vw] max-w-md">
           <Card className="p-4 shadow-2xl bg-white">
             <div className="space-y-3">
