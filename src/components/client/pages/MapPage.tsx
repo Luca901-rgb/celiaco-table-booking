@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
-import OpenStreetMap from "../components/OpenStreetMap";
+import SimpleMap from "../components/SimpleMap";
 import { RestaurantCard } from "../components/RestaurantCard";
 import { RestaurantProfile } from "@/types";
 
@@ -87,7 +87,7 @@ const MapPage = () => {
             </div>
           </div>
         ) : (
-          <OpenStreetMap restaurants={nearbyRestaurants} />
+          <SimpleMap restaurants={nearbyRestaurants} />
         )}
       </div>
 
