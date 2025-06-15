@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -191,10 +192,10 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
         </div>
       </div>
       
-      {/* Selected restaurant card - improved responsive design */}
+      {/* Selected restaurant card - positioned more to the left */}
       {selectedRestaurant && (
-        <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-center pointer-events-auto">
-          <Card className="w-full max-w-md shadow-2xl bg-white border-2 border-green-200 mx-2">
+        <div className="absolute bottom-4 left-4 right-20 z-10 flex justify-start pointer-events-auto">
+          <Card className="w-full max-w-sm shadow-2xl bg-white border-2 border-green-200">
             <div className="p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <MapPinCheck className="text-red-600 mt-1 flex-shrink-0" size={20} />
@@ -216,18 +217,18 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-2 w-full">
                 <Button
                   onClick={() => openInGoogleMaps(selectedRestaurant)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm px-3 py-2 h-auto min-h-[2.5rem]"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-sm px-3 py-2 h-auto min-h-[2.5rem] justify-start"
                 >
                   <Navigation className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">Indicazioni</span>
+                  <span>Indicazioni</span>
                 </Button>
                 <Button
                   onClick={() => setSelectedRestaurant(null)}
                   variant="outline"
-                  className="sm:flex-shrink-0 text-sm px-3 py-2 h-auto min-h-[2.5rem]"
+                  className="w-full text-sm px-3 py-2 h-auto min-h-[2.5rem] justify-start"
                 >
                   Chiudi
                 </Button>
