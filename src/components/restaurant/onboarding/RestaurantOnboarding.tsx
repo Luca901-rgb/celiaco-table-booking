@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Utensils, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Utensils, ArrowLeft, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { restaurantService } from '@/services/restaurantService';
@@ -73,6 +72,10 @@ const RestaurantOnboarding = () => {
     }
   };
 
+  const handleBackToLogin = () => {
+    navigate('/');
+  };
+
   const handleStepValidation = (stepData: Partial<RestaurantData>) => {
     setRestaurantData(prev => ({ ...prev, ...stepData }));
     return true;
@@ -120,8 +123,20 @@ const RestaurantOnboarding = () => {
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white mb-4">
-            <Utensils className="w-8 h-8" />
+          <div className="flex justify-between items-center mb-4">
+            <div></div>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-green-700 text-white">
+              <Utensils className="w-8 h-8" />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBackToLogin}
+              className="border-green-200 text-green-600 hover:bg-green-50"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Torna al Login
+            </Button>
           </div>
           <h1 className="text-3xl font-bold text-green-800">Registra il tuo Ristorante</h1>
           <p className="text-green-600">Completa la registrazione per iniziare ad accettare prenotazioni</p>
