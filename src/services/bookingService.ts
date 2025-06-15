@@ -1,8 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types';
 
 const mapDatabaseToBooking = (dbBooking: any): Booking => {
+  const fullName = dbBooking.userprofiles ? `${dbBooking.userprofiles.first_name || ''} ${dbBooking.userprofiles.last_name || ''}`.trim() : '';
+
   return {
     id: dbBooking.id,
     clientId: dbBooking.customer_id || '',
@@ -16,7 +17,7 @@ const mapDatabaseToBooking = (dbBooking: any): Booking => {
     createdAt: new Date(dbBooking.created_at || Date.now()),
     canReview: dbBooking.can_review || false,
     hasArrived: dbBooking.has_arrived || false,
-    userProfiles: dbBooking.userprofiles ? { fullName: dbBooking.userprofiles.full_name, avatarUrl: dbBooking.userprofiles.avatar_url } : null
+    userProfiles: dbBooking.userprofiles ? { fullName: fullName, avatarUrl: '' } : null
   };
 };
 
@@ -26,7 +27,7 @@ export const bookingService = {
       .from('bookings')
       .select(`
         *,
-        userprofiles(full_name, avatar_url)
+        userprofiles(first_name, last_name)
       `)
       .eq('customer_id', clientId)
       .order('date', { ascending: false });
@@ -41,7 +42,7 @@ export const bookingService = {
   async getRestaurantBookings(restaurantId: string): Promise<Booking[]> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, userprofiles(full_name, avatar_url)')
+      .select('*, userprofiles(first_name, last_name)')
       .eq('restaurant_id', restaurantId)
       .order('date', { ascending: false });
     
@@ -72,7 +73,7 @@ export const bookingService = {
     const { data, error } = await supabase
       .from('bookings')
       .insert(dbBookingData)
-      .select('*, userprofiles(full_name, avatar_url)')
+      .select('*, userprofiles(first_name, last_name)')
       .single();
     
     if (error) {
@@ -93,7 +94,7 @@ export const bookingService = {
       .from('bookings')
       .update(updateData)
       .eq('id', bookingId)
-      .select('*, userprofiles(full_name, avatar_url)')
+      .select('*, userprofiles(first_name, last_name)')
       .single();
     
     if (error) {
@@ -108,7 +109,7 @@ export const bookingService = {
       .from('bookings')
       .update({ has_arrived: hasArrived } as any)
       .eq('id', bookingId)
-      .select('*, userprofiles(full_name, avatar_url)')
+      .select('*, userprofiles(first_name, last_name)')
       .single();
 
     if (error) {
@@ -121,7 +122,7 @@ export const bookingService = {
   async getBookingById(bookingId: string): Promise<Booking | null> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, userprofiles(full_name, avatar_url)')
+      .select('*, userprofiles(first_name, last_name)')
       .eq('id', bookingId)
       .single();
     
