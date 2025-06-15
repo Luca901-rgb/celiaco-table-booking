@@ -7,6 +7,7 @@ import { Utensils, ArrowLeft, ArrowRight, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { restaurantService } from '@/services/restaurantService';
+import { useQueryClient } from '@tanstack/react-query';
 
 import BasicInfoStep from './steps/BasicInfoStep';
 import ContactInfoStep from './steps/ContactInfoStep';
@@ -32,6 +33,7 @@ export interface RestaurantData {
 const RestaurantOnboarding = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -109,8 +111,11 @@ const RestaurantOnboarding = () => {
         description: "Il tuo ristorante è stato registrato con successo."
       });
       
-      // Ricarica la pagina per aggiornare lo stato dell'auth
-      window.location.href = '/restaurant/dashboard';
+      // Invalida la query per forzare il ricaricamento dei dati del ristorante
+      // e naviga alla dashboard
+      await queryClient.invalidateQueries({ queryKey: ['restaurant', user.id] });
+      navigate('/restaurant/dashboard');
+
     } catch (error) {
       console.error('Error creating restaurant:', error);
       toast({
