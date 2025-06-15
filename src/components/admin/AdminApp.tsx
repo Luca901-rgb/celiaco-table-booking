@@ -10,6 +10,8 @@ const queryClient = new QueryClient();
 const AdminApp = () => {
   const { isAuthenticated } = useAdminAuth();
 
+  console.log('AdminApp render - isAuthenticated:', isAuthenticated);
+
   return (
     <QueryClientProvider client={queryClient}>
       {isAuthenticated ? <AdminDashboard /> : <AdminLogin />}

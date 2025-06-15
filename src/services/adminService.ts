@@ -35,39 +35,17 @@ export const adminService = {
     
     if (error) {
       console.error('Errore query admin:', error);
-      
-      // Se non troviamo l'admin, proviamo a crearlo automaticamente
-      if (error.code === 'PGRST116') {
-        console.log('Admin non trovato, provo a crearlo...');
-        const { data: insertData, error: insertError } = await supabase
-          .from('admins')
-          .insert([
-            { email: 'lcammarota24@gmail.com', password_hash: 'admin_password_hash' }
-          ])
-          .select()
-          .single();
-        
-        console.log('Insert result:', { insertData, insertError });
-        
-        if (insertError) {
-          console.error('Errore inserimento admin:', insertError);
-          throw new Error('Impossibile creare l\'amministratore');
-        }
-        
-        console.log('Admin creato con successo, procedo con il login');
-        return { admin: insertData };
-      }
-      
       throw new Error('Credenziali non valide');
     }
     
     if (!data) {
+      console.log('No admin data found');
       throw new Error('Credenziali non valide');
     }
     
     // Per semplicità, accettiamo qualsiasi password per l'admin esistente
     // In un'implementazione reale, dovresti verificare l'hash della password
-    console.log('Admin login successful');
+    console.log('Admin login successful, returning:', { admin: data });
     return { admin: data };
   },
 

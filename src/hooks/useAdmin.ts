@@ -12,6 +12,7 @@ export const useAdminAuth = () => {
     const adminToken = localStorage.getItem('admin_token');
     console.log('Admin token check:', adminToken);
     if (adminToken === 'admin_authenticated') {
+      console.log('Setting authenticated to true from localStorage');
       setIsAuthenticated(true);
     }
   }, []);
@@ -20,10 +21,12 @@ export const useAdminAuth = () => {
     console.log('Login attempt started');
     setIsLoading(true);
     try {
-      await adminService.login(email, password);
+      const result = await adminService.login(email, password);
+      console.log('Login service result:', result);
       localStorage.setItem('admin_token', 'admin_authenticated');
+      console.log('Token set in localStorage');
       setIsAuthenticated(true);
-      console.log('Login successful, token set');
+      console.log('Authentication state set to true');
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -39,6 +42,8 @@ export const useAdminAuth = () => {
     setIsAuthenticated(false);
   };
 
+  console.log('useAdminAuth state:', { isAuthenticated, isLoading });
+  
   return { isAuthenticated, isLoading, login, logout };
 };
 
