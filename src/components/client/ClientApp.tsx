@@ -9,6 +9,8 @@ import ProfilePage from './pages/ProfilePage';
 import RestaurantDetail from './pages/RestaurantDetail';
 import BookingPage from './pages/BookingPage';
 import ReviewPage from './pages/ReviewPage';
+import BookingHistoryPage from './pages/BookingHistoryPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const ClientApp = () => {
   const { user } = useAuth();
@@ -24,6 +26,8 @@ const ClientApp = () => {
         <Route path="/map" element={<MapPage />} />
         <Route path="/favorites" element={<FavoritesPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/bookings" element={<BookingHistoryPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/restaurant/:id" element={<RestaurantDetail />} />
         <Route path="/restaurant/:id/book" element={<BookingPage />} />
         <Route path="/restaurant/:id/review" element={<ReviewPage />} />

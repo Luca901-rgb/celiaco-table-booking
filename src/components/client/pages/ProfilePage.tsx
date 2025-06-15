@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Mail, Phone, MapPin, Settings, LogOut, QrCode, History, Bell } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Link } from 'react-router-dom';
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -163,15 +163,19 @@ const ProfilePage = () => {
 
       {/* Actions */}
       <div className="space-y-3">
-        <Button variant="outline" className="w-full justify-start">
-          <History className="w-4 h-4 mr-2" />
-          Storico Prenotazioni
-        </Button>
+        <Link to="/client/bookings">
+          <Button variant="outline" className="w-full justify-start">
+            <History className="w-4 h-4 mr-2" />
+            Storico Prenotazioni
+          </Button>
+        </Link>
         
-        <Button variant="outline" className="w-full justify-start">
-          <Bell className="w-4 h-4 mr-2" />
-          Notifiche
-        </Button>
+        <Link to="/client/notifications">
+          <Button variant="outline" className="w-full justify-start">
+            <Bell className="w-4 h-4 mr-2" />
+            Notifiche
+          </Button>
+        </Link>
         
         <Separator />
         
