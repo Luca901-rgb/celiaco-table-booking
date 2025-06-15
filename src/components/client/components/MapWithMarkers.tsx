@@ -74,16 +74,6 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
         setMapError('Errore nel caricamento della mappa. Verifica il token Mapbox.');
       });
 
-      map.current.on('sourcedata', (e) => {
-        if (e.sourceId && e.isSourceLoaded) {
-          console.log('Source loaded:', e.sourceId);
-        }
-      });
-
-      map.current.on('styledata', () => {
-        console.log('Style loaded');
-      });
-
       map.current.on("click", () => {
         setSelected(null);
       });
@@ -232,9 +222,10 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
       <div ref={mapContainer} className="absolute inset-0 rounded-lg shadow-lg" />
       
       {/* Loading State */}
-      {!mapInitialized && !mapError && (
+      {!mapInitialized && !mapError && mapboxToken && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
             <div className="text-green-600 font-medium">Caricamento mappa...</div>
             <div className="text-sm text-gray-500">Inizializzazione Mapbox in corso</div>
           </div>
@@ -245,12 +236,12 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
       {mapError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 rounded-lg p-6">
           <div className="text-red-600 font-medium text-lg mb-2">
-            Errore Mappa
+            ❌ Errore Mappa
           </div>
-          <div className="text-sm text-red-500 text-center mb-4">
+          <div className="text-sm text-red-500 text-center mb-4 max-w-md">
             {mapError}
           </div>
-          <div className="text-xs text-gray-600 text-center">
+          <div className="text-xs text-gray-600 text-center max-w-md">
             Verifica che il token Mapbox sia valido e abbia le autorizzazioni necessarie.
             <br />
             Puoi ottenere un token gratuito su{" "}
@@ -263,32 +254,33 @@ const MapWithMarkers: React.FC<MapWithMarkersProps> = ({ restaurants, mapboxToke
               mapbox.com
             </a>
           </div>
-        </div>
-      )}
-      
-      {locationLoading && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-white/90 px-3 py-1 rounded-full text-sm">
-          Rilevamento posizione...
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 bg-green-600 hover:bg-green-700"
+            size="sm"
+          >
+            Riprova
+          </Button>
         </div>
       )}
 
       {/* Legend - only show when map is loaded */}
       {mapInitialized && !mapError && (
-        <div className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur p-3 rounded-lg shadow-lg">
+        <div className="absolute top-4 left-4 z-20 bg-white/95 backdrop-blur p-3 rounded-lg shadow-lg border">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white"></div>
-            <span className="text-xs text-gray-700">La tua posizione</span>
+            <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow"></div>
+            <span className="text-xs text-gray-700 font-medium">La tua posizione</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white"></div>
-            <span className="text-xs text-gray-700">Ristoranti</span>
+            <div className="w-4 h-4 bg-red-600 rounded-full border-2 border-white shadow"></div>
+            <span className="text-xs text-gray-700 font-medium">Ristoranti</span>
           </div>
         </div>
       )}
       
       {selected && mapInitialized && !mapError && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 w-[90vw] max-w-md">
-          <Card className="p-4 shadow-2xl bg-white">
+          <Card className="p-4 shadow-2xl bg-white border-2 border-green-200">
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <MapPinCheck className="text-red-600 mt-1 flex-shrink-0" size={20} />
