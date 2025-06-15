@@ -93,12 +93,12 @@ export const useFavorites = () => {
           description: "Il ristorante è stato rimosso dai tuoi preferiti"
         });
       } else {
-        // Aggiungi ai preferiti
+        // Aggiungi ai preferiti - usa l'UUID dell'utente direttamente
         console.log('Adding to favorites...');
         const { error } = await supabase
           .from('favorites')
           .insert({
-            user_id: user.id,
+            user_id: user.id, // Questo ora è un UUID valido dalla tabella users
             restaurant_id: restaurantId
           });
 
