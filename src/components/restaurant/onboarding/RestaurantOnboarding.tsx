@@ -31,7 +31,7 @@ export interface RestaurantData {
 
 const RestaurantOnboarding = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -72,8 +72,15 @@ const RestaurantOnboarding = () => {
     }
   };
 
-  const handleBackToLogin = () => {
-    navigate('/');
+  const handleBackToLogin = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Force navigate even if logout fails
+      navigate('/');
+    }
   };
 
   const handleStepValidation = (stepData: Partial<RestaurantData>) => {
