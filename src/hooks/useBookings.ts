@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '@/services/bookingService';
 import { Booking } from '@/types';
@@ -6,20 +7,39 @@ import { toast } from '@/hooks/use-toast';
 export const useClientBookings = (clientId: string) => {
   return useQuery({
     queryKey: ['bookings', 'client', clientId],
-    queryFn: () => bookingService.getClientBookings(clientId),
+    queryFn: () => {
+      if (!clientId) throw new Error('Client ID is required');
+      return bookingService.getClientBookings(clientId);
+    },
     enabled: !!clientId,
-    staleTime: 30000, // Cache per 30 secondi per migliorare le prestazioni
-    gcTime: 300000, // Mantieni in cache per 5 minuti (era cacheTime)
+    staleTime: 30000,
+    gcTime: 300000,
+    retry: (failureCount, error) => {
+      // Retry solo per errori di rete, non per errori 404/403
+      if (error instanceof Error && error.message.includes('Client ID is required')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 };
 
 export const useRestaurantBookings = (restaurantId: string) => {
   return useQuery({
     queryKey: ['bookings', 'restaurant', restaurantId],
-    queryFn: () => bookingService.getRestaurantBookings(restaurantId),
+    queryFn: () => {
+      if (!restaurantId) throw new Error('Restaurant ID is required');
+      return bookingService.getRestaurantBookings(restaurantId);
+    },
     enabled: !!restaurantId,
     staleTime: 30000,
-    gcTime: 300000, // Mantieni in cache per 5 minuti (era cacheTime)
+    gcTime: 300000,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes('Restaurant ID is required')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 };
 
@@ -27,7 +47,12 @@ export const useCreateBooking = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: bookingService.createBooking,
+    mutationFn: (bookingData: any) => {
+      if (!bookingData.clientId || !bookingData.restaurantId) {
+        throw new Error('Client ID and Restaurant ID are required');
+      }
+      return bookingService.createBooking(bookingData);
+    },
     onSuccess: (newBooking, variables) => {
       // Aggiorna immediatamente la cache locale
       queryClient.setQueryData(['bookings', 'client', variables.clientId], (old: Booking[] | undefined) => {
@@ -58,8 +83,12 @@ export const useUpdateBookingStatus = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ bookingId, status }: { bookingId: string; status: Booking['status'] }) => 
-      bookingService.updateBookingStatus(bookingId, status),
+    mutationFn: ({ bookingId, status }: { bookingId: string; status: Booking['status'] }) => {
+      if (!bookingId || !status) {
+        throw new Error('Booking ID and status are required');
+      }
+      return bookingService.updateBookingStatus(bookingId, status);
+    },
     onSuccess: (updatedBooking) => {
       // Aggiorna tutte le query delle prenotazioni
       queryClient.invalidateQueries({ queryKey: ['bookings'] });
@@ -92,7 +121,16 @@ export const useUpdateBookingStatus = () => {
 export const useBooking = (bookingId: string) => {
   return useQuery({
     queryKey: ['booking', bookingId],
-    queryFn: () => bookingService.getBookingById(bookingId),
+    queryFn: () => {
+      if (!bookingId) throw new Error('Booking ID is required');
+      return bookingService.getBookingById(bookingId);
+    },
     enabled: !!bookingId,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes('Booking ID is required')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 };

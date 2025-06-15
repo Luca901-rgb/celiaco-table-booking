@@ -1,10 +1,11 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, BellRing, Check, Calendar, MessageSquare } from 'lucide-react';
+import { Bell, Calendar, Check, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
 
@@ -42,9 +43,16 @@ const NotificationsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="p-4 space-y-4 pb-20">
+      <div className="min-h-screen bg-gray-50 p-4">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Notifiche</h1>
+          <div className="flex items-center">
+            <Link to="/client/profile">
+              <Button variant="ghost" size="sm" className="mr-2">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-900">Notifiche</h1>
+          </div>
         </div>
         <div className="text-center py-12">
           <div className="w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
@@ -55,11 +63,18 @@ const NotificationsPage = () => {
   }
 
   return (
-    <div className="p-4 space-y-4 pb-20">
+    <div className="min-h-screen bg-gray-50 p-4 pb-24">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Notifiche</h1>
+        <div className="flex items-center">
+          <Link to="/client/profile">
+            <Button variant="ghost" size="sm" className="mr-2">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">Notifiche</h1>
+        </div>
         {unreadCount > 0 && (
-          <Badge className="bg-red-100 text-red-800">
+          <Badge className="bg-red-100 text-red-800 flex-shrink-0">
             {unreadCount} non {unreadCount === 1 ? 'letta' : 'lette'}
           </Badge>
         )}
@@ -76,7 +91,7 @@ const NotificationsPage = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 max-w-2xl mx-auto">
           {notifications.map((notification) => {
             const IconComponent = getNotificationIcon(notification.type);
             const isUnread = !notification.read;
@@ -84,21 +99,21 @@ const NotificationsPage = () => {
             return (
               <Card 
                 key={notification.id} 
-                className={`transition-colors ${isUnread ? 'border-green-200 bg-green-50' : ''}`}
+                className={`transition-colors border-green-200 ${isUnread ? 'bg-green-50' : ''}`}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-full ${getNotificationColor(notification.type)}`}>
+                    <div className={`p-2 rounded-full flex-shrink-0 ${getNotificationColor(notification.type)}`}>
                       <IconComponent className="w-4 h-4" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className={`font-medium ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-medium truncate ${isUnread ? 'text-gray-900' : 'text-gray-700'}`}>
                             {notification.title}
                           </h3>
-                          <p className={`text-sm mt-1 ${isUnread ? 'text-gray-700' : 'text-gray-600'}`}>
+                          <p className={`text-sm mt-1 break-words ${isUnread ? 'text-gray-700' : 'text-gray-600'}`}>
                             {notification.message}
                           </p>
                           <p className="text-xs text-gray-500 mt-2">
@@ -109,7 +124,7 @@ const NotificationsPage = () => {
                           </p>
                         </div>
                         
-                        <div className="flex items-center gap-2 ml-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           {isUnread && (
                             <>
                               <div className="w-2 h-2 bg-green-600 rounded-full"></div>
@@ -117,10 +132,10 @@ const NotificationsPage = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleMarkAsRead(notification.id)}
-                                className="text-xs"
+                                className="text-xs whitespace-nowrap"
                               >
                                 <Check className="w-3 h-3 mr-1" />
-                                Segna come letta
+                                Letta
                               </Button>
                             </>
                           )}

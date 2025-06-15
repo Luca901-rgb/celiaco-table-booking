@@ -18,9 +18,11 @@ interface Notification {
 export const useNotifications = (userId: string) => {
   const queryClient = useQueryClient();
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', userId],
     queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -31,6 +33,12 @@ export const useNotifications = (userId: string) => {
       return data as Notification[];
     },
     enabled: !!userId,
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes('User ID is required')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
   });
 
   // Sottoscrizione in tempo reale
@@ -55,11 +63,13 @@ export const useNotifications = (userId: string) => {
             return [newNotification, ...(old || [])];
           });
 
-          // Mostra toast notification
-          toast({
-            title: newNotification.title,
-            description: newNotification.message,
-          });
+          // Mostra toast notification solo se l'utente non è nella pagina notifiche
+          if (!window.location.pathname.includes('/notifications')) {
+            toast({
+              title: newNotification.title,
+              description: newNotification.message,
+            });
+          }
         }
       )
       .subscribe();
@@ -71,6 +81,8 @@ export const useNotifications = (userId: string) => {
 
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
+      if (!notificationId) throw new Error('Notification ID is required');
+      
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -78,8 +90,24 @@ export const useNotifications = (userId: string) => {
       
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', userId] });
+    onSuccess: (_, notificationId) => {
+      // Aggiorna la cache localmente per un'esperienza più fluida
+      queryClient.setQueryData(['notifications', userId], (old: Notification[] | undefined) => {
+        if (!old) return old;
+        return old.map(notification => 
+          notification.id === notificationId 
+            ? { ...notification, read: true }
+            : notification
+        );
+      });
+    },
+    onError: (error) => {
+      console.error('Error marking notification as read:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiornare la notifica",
+        variant: "destructive"
+      });
     }
   });
 
@@ -88,6 +116,7 @@ export const useNotifications = (userId: string) => {
   return {
     notifications,
     isLoading,
+    error,
     unreadCount,
     markAsRead: markAsReadMutation.mutate
   };
