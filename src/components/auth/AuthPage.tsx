@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { Utensils, Users, Mail, Lock, User } from 'lucide-react';
+import { Utensils, Users, Mail, Lock, User, Shield } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AuthPage = () => {
@@ -251,6 +250,19 @@ const AuthPage = () => {
               >
                 {isLogin ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi'}
               </Button>
+              
+              {/* Admin Access Button */}
+              <div className="pt-4 border-t border-green-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/admin')}
+                  className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  Admin
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
