@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Settings, Heart, Calendar, Bell, LogOut, MapPin, Phone, Mail, Edit } from 'lucide-react';
+import { User, Calendar, Bell, LogOut, MapPin, Phone, Mail, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ClientProfile } from '@/types';
 
@@ -24,7 +24,7 @@ const ProfilePage = () => {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Il Mio Profilo</h1>
-        <p className="text-gray-600">Gestisci le tue informazioni e preferenze</p>
+        <p className="text-gray-600">Le tue informazioni personali</p>
       </div>
 
       {/* Profile Info Card */}
@@ -102,22 +102,6 @@ const ProfilePage = () => {
           </Card>
         </Link>
 
-        <Link to="/client/favorites">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                  <Heart className="w-5 h-5 text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900">Ristoranti Preferiti</h3>
-                  <p className="text-sm text-gray-600 truncate">I tuoi ristoranti del cuore</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
         <Link to="/client/notifications">
           <Card className="hover:shadow-md transition-shadow cursor-pointer border-green-200">
             <CardContent className="p-4">
@@ -133,20 +117,6 @@ const ProfilePage = () => {
             </CardContent>
           </Card>
         </Link>
-
-        <Card className="hover:shadow-md transition-shadow cursor-pointer border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Settings className="w-5 h-5 text-gray-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-gray-900">Impostazioni</h3>
-                <p className="text-sm text-gray-600 truncate">Gestisci le tue preferenze</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Logout */}
