@@ -47,7 +47,16 @@ const LocationStep = ({ data, onValidation, onNext }: LocationStepProps) => {
             errorMessage = 'Timeout nella rilevazione della posizione';
             break;
         }
-        setLocationError(errorMessage);
+        
+        // Fallback for development environment
+        if (import.meta.env.DEV) {
+          console.warn("Geolocation failed. Using fallback location for development.");
+          setLocation({ latitude: 45.4642, longitude: 9.1900 }); // Milan
+          setLocationError(`${errorMessage}. Verrà usata una posizione di default (Milano) per continuare.`);
+        } else {
+          setLocationError(errorMessage);
+        }
+
         setIsLocating(false);
       },
       {
