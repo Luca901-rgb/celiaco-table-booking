@@ -107,7 +107,7 @@ export const bookingService = {
   async markAsArrived(bookingId: string, hasArrived: boolean): Promise<Booking> {
     const { data, error } = await supabase
       .from('bookings')
-      .update({ has_arrived: hasArrived })
+      .update({ has_arrived: hasArrived } as any)
       .eq('id', bookingId)
       .select('*, user_profiles(full_name, avatar_url)')
       .single();

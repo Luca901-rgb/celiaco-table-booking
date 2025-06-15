@@ -36,6 +36,7 @@ export type Database = {
           created_at: string | null
           customer_id: string | null
           date: string
+          has_arrived: boolean
           id: string
           number_of_guests: number
           qr_code: string | null
@@ -49,6 +50,7 @@ export type Database = {
           created_at?: string | null
           customer_id?: string | null
           date: string
+          has_arrived?: boolean
           id?: string
           number_of_guests: number
           qr_code?: string | null
@@ -62,6 +64,7 @@ export type Database = {
           created_at?: string | null
           customer_id?: string | null
           date?: string
+          has_arrived?: boolean
           id?: string
           number_of_guests?: number
           qr_code?: string | null
