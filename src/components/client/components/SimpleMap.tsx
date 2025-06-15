@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPinCheck, Navigation, Star, MapPin } from "lucide-react";
+import { MapPinCheck, Navigation, Star, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { useGeolocation, calculateDistance, formatDistance } from "@/hooks/useGeolocation";
 import { RestaurantProfile } from "@/types";
 
@@ -12,6 +12,7 @@ interface SimpleMapProps {
 
 const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantProfile | null>(null);
+  const [isListCollapsed, setIsListCollapsed] = useState(false);
   const { location: userLocation } = useGeolocation();
 
   // Get the center point for the map
@@ -107,71 +108,87 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
 
       {/* Map overlay with controls */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Legend */}
-        <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur p-3 rounded-lg shadow-lg border pointer-events-auto">
-          <div className="text-sm font-semibold text-green-800 mb-2">Legenda</div>
+        {/* Legend - moved to bottom left and made smaller */}
+        <div className="absolute bottom-4 left-4 z-10 bg-white/95 backdrop-blur p-2 rounded-lg shadow-lg border pointer-events-auto">
+          <div className="text-xs font-semibold text-green-800 mb-1">Legenda</div>
           {userLocation && (
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow"></div>
-              <span className="text-xs text-gray-700 font-medium">La tua posizione</span>
+            <div className="flex items-center gap-1 mb-1">
+              <div className="w-3 h-3 bg-blue-600 rounded-full border border-white shadow"></div>
+              <span className="text-xs text-gray-700">La tua posizione</span>
             </div>
           )}
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-red-600" />
-            <span className="text-xs text-gray-700 font-medium">Ristoranti</span>
+          <div className="flex items-center gap-1">
+            <MapPin className="w-3 h-3 text-red-600" />
+            <span className="text-xs text-gray-700">Ristoranti</span>
           </div>
         </div>
 
-        {/* Restaurant list on the right */}
-        <div className="absolute top-4 right-4 z-10 w-80 max-h-96 overflow-y-auto bg-white/95 backdrop-blur rounded-lg shadow-lg border pointer-events-auto">
-          <div className="p-3 border-b bg-green-600 text-white rounded-t-lg">
-            <h3 className="font-semibold text-sm">Ristoranti Vicini ({nearbyRestaurants.length})</h3>
-            {userLocation && (
-              <p className="text-xs text-green-100">Ordinati per distanza</p>
-            )}
+        {/* Restaurant list on the right - made smaller and collapsible */}
+        <div className="absolute top-4 right-4 z-10 w-72 bg-white/95 backdrop-blur rounded-lg shadow-lg border pointer-events-auto">
+          <div 
+            className="p-3 border-b bg-green-600 text-white rounded-t-lg cursor-pointer flex items-center justify-between"
+            onClick={() => setIsListCollapsed(!isListCollapsed)}
+          >
+            <div>
+              <h3 className="font-semibold text-sm">Ristoranti ({nearbyRestaurants.length})</h3>
+              {userLocation && !isListCollapsed && (
+                <p className="text-xs text-green-100">Ordinati per distanza</p>
+              )}
+            </div>
+            {isListCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </div>
           
-          <div className="max-h-64 overflow-y-auto">
-            {nearbyRestaurants.map((restaurant) => (
-              <div
-                key={restaurant.id}
-                className={`p-3 border-b border-gray-100 cursor-pointer hover:bg-green-50 transition-colors ${
-                  selectedRestaurant?.id === restaurant.id ? 'bg-green-100' : ''
-                }`}
-                onClick={() => setSelectedRestaurant(restaurant)}
-              >
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-red-600 mt-1 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-gray-900 truncate">
-                      {restaurant.name}
-                    </div>
-                    <div className="text-xs text-gray-600 truncate">
-                      {restaurant.address}
-                    </div>
-                    
-                    <div className="flex items-center gap-1 mt-1">
-                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                      <span className="text-xs font-medium">{(restaurant.average_rating || 0).toFixed(1)}</span>
-                      <span className="text-xs text-gray-500">({restaurant.total_reviews || 0})</span>
-                    </div>
-
-                    {getDistanceToRestaurant(restaurant) && (
-                      <div className="text-xs text-green-600 font-medium mt-1">
-                        📍 {getDistanceToRestaurant(restaurant)} da te
+          {!isListCollapsed && (
+            <div className="max-h-48 overflow-y-auto">
+              {nearbyRestaurants.slice(0, 5).map((restaurant) => (
+                <div
+                  key={restaurant.id}
+                  className={`p-2 border-b border-gray-100 cursor-pointer hover:bg-green-50 transition-colors ${
+                    selectedRestaurant?.id === restaurant.id ? 'bg-green-100' : ''
+                  }`}
+                  onClick={() => setSelectedRestaurant(restaurant)}
+                >
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-3 h-3 text-red-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-xs text-gray-900 truncate">
+                        {restaurant.name}
                       </div>
-                    )}
+                      <div className="text-xs text-gray-600 truncate">
+                        {restaurant.address}
+                      </div>
+                      
+                      <div className="flex items-center gap-1 mt-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span className="text-xs font-medium">{(restaurant.average_rating || 0).toFixed(1)}</span>
+                        <span className="text-xs text-gray-500">({restaurant.total_reviews || 0})</span>
+                      </div>
+
+                      {getDistanceToRestaurant(restaurant) && (
+                        <div className="text-xs text-green-600 font-medium mt-1">
+                          📍 {getDistanceToRestaurant(restaurant)} da te
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {nearbyRestaurants.length === 0 && (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                Nessun ristorante con coordinate trovato
-              </div>
-            )}
-          </div>
+              ))}
+              
+              {nearbyRestaurants.length > 5 && (
+                <div className="p-2 text-center">
+                  <span className="text-xs text-gray-500">
+                    +{nearbyRestaurants.length - 5} altri ristoranti
+                  </span>
+                </div>
+              )}
+              
+              {nearbyRestaurants.length === 0 && (
+                <div className="p-4 text-center text-gray-500 text-sm">
+                  Nessun ristorante con coordinate trovato
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       
