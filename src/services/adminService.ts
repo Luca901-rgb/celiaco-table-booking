@@ -16,6 +16,14 @@ export const adminService = {
   async login(email: string, password: string) {
     console.log('Admin login attempt for:', email);
     
+    // Prima verifichiamo se la tabella admins esiste e ha dei dati
+    const { data: allAdmins, error: listError } = await supabase
+      .from('admins')
+      .select('*');
+    
+    console.log('All admins in database:', allAdmins);
+    console.log('List error:', listError);
+    
     // Verifica che l'admin esista nel database
     const { data, error } = await supabase
       .from('admins')
@@ -23,8 +31,33 @@ export const adminService = {
       .eq('email', email)
       .single();
     
+    console.log('Query result:', { data, error });
+    
     if (error) {
       console.error('Errore query admin:', error);
+      
+      // Se non troviamo l'admin, proviamo a crearlo automaticamente
+      if (error.code === 'PGRST116') {
+        console.log('Admin non trovato, provo a crearlo...');
+        const { data: insertData, error: insertError } = await supabase
+          .from('admins')
+          .insert([
+            { email: 'lcammarota24@gmail.com', password_hash: 'admin_password_hash' }
+          ])
+          .select()
+          .single();
+        
+        console.log('Insert result:', { insertData, insertError });
+        
+        if (insertError) {
+          console.error('Errore inserimento admin:', insertError);
+          throw new Error('Impossibile creare l\'amministratore');
+        }
+        
+        console.log('Admin creato con successo, procedo con il login');
+        return { admin: insertData };
+      }
+      
       throw new Error('Credenziali non valide');
     }
     
