@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,8 @@ import { it } from 'date-fns/locale';
 
 const DashboardPage = () => {
   const { profile } = useAuth();
-  const { data, isLoading, isError } = useRestaurantDashboard(profile?.restaurant_id);
+  const restaurantId = profile?.type === 'restaurant' ? (profile as any).restaurant_id : undefined;
+  const { data, isLoading, isError } = useRestaurantDashboard(restaurantId);
 
   const stats = data?.stats;
   const todayBookings = data?.todayBookings;
@@ -133,7 +133,7 @@ const DashboardPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="flex items-center gap-4 sm:min-w-[120px]">
                     <div className="text-center">
-                      <div className="font-semibold text-green-800 text-lg">{format(new Date(booking.booking_time), 'HH:mm')}</div>
+                      <div className="font-semibold text-green-800 text-lg">{format(new Date(`${booking.date}T${booking.time}`), 'HH:mm')}</div>
                       <div className="text-sm text-gray-500">{booking.number_of_guests} persone</div>
                     </div>
                   </div>
@@ -151,12 +151,12 @@ const DashboardPage = () => {
                         {booking.status === 'confirmed' ? 'Confermata' :
                          booking.status === 'pending' ? 'In Attesa' : 'Annullata'}
                       </Badge>
-                      {booking.has_arrived && (
+                      {/* {booking.has_arrived && (
                         <Badge className="bg-blue-600">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Arrivato
                         </Badge>
-                      )}
+                      )} */}
                     </div>
                   </div>
                   
@@ -173,12 +173,12 @@ const DashboardPage = () => {
                         </Button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && !booking.has_arrived && (
+                    {/* {booking.status === 'confirmed' && !booking.has_arrived && (
                       <Button size="sm" variant="outline" className="border-green-200 text-green-600">
                         <QrCode className="w-4 h-4 mr-2" />
                         Scansiona QR
                       </Button>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </div>

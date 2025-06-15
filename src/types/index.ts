@@ -15,6 +15,7 @@ export interface ClientProfile extends User {
 }
 
 export interface RestaurantProfile extends User {
+  restaurant_id?: string;
   description?: string;
   address: string;
   phone: string;
@@ -55,14 +56,16 @@ export interface Booking {
   id: string;
   clientId: string;
   restaurantId: string;
-  date: Date;
+  date: string;
   time: string;
-  guests: number;
+  number_of_guests: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   specialRequests?: string;
   qrCode?: string;
   createdAt: Date;
   canReview?: boolean;
+  user_profiles?: { full_name: string; avatar_url: string; } | null;
+  has_arrived?: boolean;
 }
 
 export interface Review {
@@ -71,8 +74,8 @@ export interface Review {
   restaurantId: string;
   rating: number;
   comment: string;
-  date: Date;
-  clientName: string;
+  created_at: string;
   isVerified?: boolean;
   bookingId?: string;
+  user_profiles?: { full_name: string | null; avatar_url: string | null; } | null;
 }

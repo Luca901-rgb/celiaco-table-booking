@@ -1,24 +1,21 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { menuService } from '@/services/menuService';
 import { MenuItem } from '@/types';
 import { toast } from '@/hooks/use-toast';
 
-export const useRestaurantMenu = (restaurantId: string) => {
-  return useQuery({
+export const useMenu = (restaurantId?: string) => {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['menu', restaurantId],
-    queryFn: () => menuService.getRestaurantMenu(restaurantId),
+    queryFn: () => menuService.getRestaurantMenu(restaurantId!),
     enabled: !!restaurantId,
   });
-};
 
-export const useAddMenuItem = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: menuService.addMenuItem,
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['menu', variables.restaurantId] });
+  const { mutateAsync: addMenuItem, isPending: isAdding } = useMutation({
+    mutationFn: (item: Omit<MenuItem, 'id'>) => menuService.addMenuItem(item),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu', restaurantId] });
       toast({
         title: "Successo!",
         description: "Piatto aggiunto al menu"
@@ -32,38 +29,11 @@ export const useAddMenuItem = () => {
       });
     }
   });
-};
 
-export const useUpdateMenuItem = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<MenuItem> }) => 
-      menuService.updateMenuItem(id, updates),
+  const { mutateAsync: deleteMenuItem, isPending: isDeleting } = useMutation({
+    mutationFn: (id: string) => menuService.deleteMenuItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu'] });
-      toast({
-        title: "Successo!",
-        description: "Piatto aggiornato"
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Errore",
-        description: "Errore nell'aggiornamento del piatto",
-        variant: "destructive"
-      });
-    }
-  });
-};
-
-export const useDeleteMenuItem = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: menuService.deleteMenuItem,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['menu'] });
+      queryClient.invalidateQueries({ queryKey: ['menu', restaurantId] });
       toast({
         title: "Successo!",
         description: "Piatto rimosso dal menu"
@@ -77,4 +47,17 @@ export const useDeleteMenuItem = () => {
       });
     }
   });
+
+  // We are not implementing update for now to keep it simple, but we can add it later.
+
+  return { 
+    data, 
+    isLoading, 
+    isError, 
+    error, 
+    addMenuItem, 
+    isAdding,
+    deleteMenuItem,
+    isDeleting
+  };
 };

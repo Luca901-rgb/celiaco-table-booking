@@ -16,11 +16,10 @@ import { MenuItem } from '@/types';
 
 const MenuManagement = () => {
   const { profile } = useAuth();
-  const restaurantId = profile?.restaurant_id;
+  const restaurantId = profile?.type === 'restaurant' ? (profile as any).restaurant_id : undefined;
 
-  const { data: menuItems = [], isLoading, addMenuItem, deleteMenuItem } = useMenu(restaurantId);
+  const { data: menuItems = [], isLoading, addMenuItem, isAdding, deleteMenuItem } = useMenu(restaurantId);
   const [isAddingItem, setIsAddingItem] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newItem, setNewItem] = useState({
     name: '',
@@ -28,7 +27,7 @@ const MenuManagement = () => {
     price: '',
     category: 'antipasti',
     allergens: [] as string[],
-    is_gluten_free: true,
+    isGlutenFree: true,
   });
 
   const categories = [
@@ -46,7 +45,7 @@ const MenuManagement = () => {
   ];
 
   const handleAddItem = async () => {
-    if (!newItem.name || !newItem.price) {
+    if (!newItem.name || !newItem.price || !restaurantId) {
       toast({
         title: "Errore",
         description: "Inserisci almeno nome e prezzo",
@@ -55,13 +54,13 @@ const MenuManagement = () => {
       return;
     }
 
-    setIsSubmitting(true);
     try {
       await addMenuItem({
         ...newItem,
         price: parseFloat(newItem.price),
-        restaurant_id: restaurantId,
-      } as Omit<MenuItem, 'id' | 'created_at' | 'image' | 'is_available'>);
+        restaurantId: restaurantId,
+        available: true,
+      });
 
       setNewItem({
         name: '',
@@ -69,38 +68,19 @@ const MenuManagement = () => {
         price: '',
         category: 'antipasti',
         allergens: [],
-        is_gluten_free: true
+        isGlutenFree: true
       });
       setIsAddingItem(false);
-      
-      toast({
-        title: "Piatto aggiunto",
-        description: "Il nuovo piatto è stato aggiunto al menù"
-      });
     } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Impossibile aggiungere il piatto",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Toast is already handled by the hook
     }
   };
 
   const handleDeleteItem = async (id: string) => {
     try {
       await deleteMenuItem(id);
-      toast({
-        title: "Piatto rimosso",
-        description: "Il piatto è stato rimosso dal menù"
-      });
     } catch (error) {
-      toast({
-        title: "Errore",
-        description: "Impossibile rimuovere il piatto",
-        variant: "destructive"
-      });
+       // Toast is already handled by the hook
     }
   };
 
@@ -232,9 +212,9 @@ const MenuManagement = () => {
                       onClick={handleAddItem}
                       className="bg-green-600 hover:bg-green-700 w-full"
                       size="sm"
-                      disabled={isSubmitting}
+                      disabled={isAdding}
                     >
-                      {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />}
+                      {isAdding ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />}
                       Salva Piatto
                     </Button>
                     <Button
@@ -270,7 +250,7 @@ const MenuManagement = () => {
                               <h4 className="font-semibold text-green-800 text-sm break-words">{item.name}</h4>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-green-600 text-sm">€{item.price}</span>
-                                {item.is_gluten_free && (
+                                {item.isGlutenFree && (
                                   <Badge className="bg-green-600 text-xs">Senza Glutine</Badge>
                                 )}
                               </div>

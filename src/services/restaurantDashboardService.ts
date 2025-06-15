@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, Review } from '@/types';
 
@@ -33,17 +32,14 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
 
   // Prenotazioni di oggi
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const todayStr = today.toISOString().split('T')[0];
 
   const { data: todayBookingsData, error: todayBookingsError } = await supabase
     .from('bookings')
     .select('*, user_profiles(full_name, avatar_url)')
     .eq('restaurant_id', restaurantId)
-    .gte('booking_time', today.toISOString())
-    .lt('booking_time', tomorrow.toISOString())
-    .order('booking_time', { ascending: true });
+    .eq('date', todayStr)
+    .order('time', { ascending: true });
   
   if (todayBookingsError) throw new Error(`Errore nel caricare le prenotazioni di oggi: ${todayBookingsError.message}`);
 
