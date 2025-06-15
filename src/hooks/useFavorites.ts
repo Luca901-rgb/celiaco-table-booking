@@ -11,29 +11,40 @@ export const useFavorites = () => {
 
   // Carica i preferiti all'avvio
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
+      console.log('Loading favorites for user:', user.id);
       fetchFavorites();
     } else {
+      console.log('No user found, clearing favorites');
       setFavorites([]);
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const fetchFavorites = async () => {
-    if (!user) return;
+    if (!user?.id) {
+      console.log('No user ID available');
+      return;
+    }
 
     try {
+      console.log('Fetching favorites from database...');
       const { data, error } = await supabase
         .from('favorites')
         .select('restaurant_id')
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching favorites:', error);
+        throw error;
+      }
       
+      console.log('Favorites data received:', data);
       const restaurantIds = data?.map(fav => fav.restaurant_id).filter(Boolean) || [];
+      console.log('Processed restaurant IDs:', restaurantIds);
       setFavorites(restaurantIds);
     } catch (error) {
-      console.error('Error fetching favorites:', error);
+      console.error('Error in fetchFavorites:', error);
       toast({
         title: "Errore",
         description: "Errore nel caricamento dei preferiti",
@@ -45,30 +56,45 @@ export const useFavorites = () => {
   };
 
   const toggleFavorite = async (restaurantId: string) => {
-    if (!user) return;
+    if (!user?.id) {
+      console.log('No user available for toggle favorite');
+      toast({
+        title: "Errore",
+        description: "Devi essere autenticato per aggiungere ai preferiti",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const isFavorite = favorites.includes(restaurantId);
+    console.log('Toggling favorite:', { restaurantId, isFavorite, userId: user.id });
     
     try {
       setLoading(true);
       
       if (isFavorite) {
         // Rimuovi dai preferiti
+        console.log('Removing from favorites...');
         const { error } = await supabase
           .from('favorites')
           .delete()
           .eq('user_id', user.id)
           .eq('restaurant_id', restaurantId);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error removing favorite:', error);
+          throw error;
+        }
         
         setFavorites(prev => prev.filter(id => id !== restaurantId));
+        console.log('Successfully removed from favorites');
         toast({
           title: "Rimosso dai preferiti",
           description: "Il ristorante è stato rimosso dai tuoi preferiti"
         });
       } else {
         // Aggiungi ai preferiti
+        console.log('Adding to favorites...');
         const { error } = await supabase
           .from('favorites')
           .insert({
@@ -76,16 +102,20 @@ export const useFavorites = () => {
             restaurant_id: restaurantId
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error adding favorite:', error);
+          throw error;
+        }
         
         setFavorites(prev => [...prev, restaurantId]);
+        console.log('Successfully added to favorites');
         toast({
           title: "Aggiunto ai preferiti",
           description: "Il ristorante è stato aggiunto ai tuoi preferiti"
         });
       }
     } catch (error) {
-      console.error('Error updating favorites:', error);
+      console.error('Error in toggleFavorite:', error);
       toast({
         title: "Errore",
         description: "Errore nell'aggiornamento dei preferiti",
