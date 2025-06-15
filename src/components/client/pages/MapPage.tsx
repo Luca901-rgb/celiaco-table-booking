@@ -7,6 +7,12 @@ import { useRestaurants } from "@/hooks/useRestaurants";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
 import MapWithMarkers from "../components/MapWithMarkers";
 import { RestaurantCard } from "../components/RestaurantCard";
+import { RestaurantProfile } from "@/types";
+
+// Extend RestaurantProfile to include distance
+interface RestaurantWithDistance extends RestaurantProfile {
+  distance?: number;
+}
 
 const MapPage = () => {
   const [mapboxToken, setMapboxToken] = useState("");
@@ -15,11 +21,11 @@ const MapPage = () => {
 
   // Filter restaurants within 30km
   const nearbyRestaurants = useMemo(() => {
-    if (!location || !restaurants.length) return restaurants;
+    if (!location || !restaurants.length) return restaurants as RestaurantWithDistance[];
 
     return restaurants
       .map(restaurant => {
-        if (!restaurant.latitude || !restaurant.longitude) return restaurant;
+        if (!restaurant.latitude || !restaurant.longitude) return restaurant as RestaurantWithDistance;
         
         const distance = calculateDistance(
           location.latitude,
@@ -28,9 +34,9 @@ const MapPage = () => {
           restaurant.longitude
         );
         
-        return distance <= 30 ? { ...restaurant, distance } : null;
+        return distance <= 30 ? { ...restaurant, distance } as RestaurantWithDistance : null;
       })
-      .filter(Boolean)
+      .filter((restaurant): restaurant is RestaurantWithDistance => restaurant !== null)
       .sort((a, b) => (a?.distance || 0) - (b?.distance || 0));
   }, [location, restaurants]);
 
