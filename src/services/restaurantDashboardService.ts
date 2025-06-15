@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Booking, Review } from '@/types';
 
@@ -43,6 +44,22 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
   
   if (todayBookingsError) throw new Error(`Errore nel caricare le prenotazioni di oggi: ${todayBookingsError.message}`);
 
+  const bookings: Booking[] = (todayBookingsData || []).map((b: any) => ({
+    id: b.id,
+    clientId: b.customer_id,
+    restaurantId: b.restaurant_id,
+    date: b.date,
+    time: b.time,
+    guests: b.number_of_guests,
+    status: b.status,
+    specialRequests: b.special_requests,
+    qrCode: b.qr_code,
+    createdAt: new Date(b.created_at),
+    canReview: b.can_review,
+    userProfiles: b.user_profiles ? { fullName: b.user_profiles.full_name, avatarUrl: b.user_profiles.avatar_url } : null,
+    hasArrived: b.has_arrived,
+  }));
+
   // Recensioni recenti
   const { data: recentReviewsData, error: recentReviewsError } = await supabase
     .from('reviews')
@@ -52,6 +69,19 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     .limit(5);
 
   if (recentReviewsError) throw new Error(`Errore nel caricare le recensioni: ${recentReviewsError.message}`);
+
+  const reviews: Review[] = (recentReviewsData || []).map((r: any) => ({
+    id: r.id,
+    clientId: r.customer_id,
+    restaurantId: r.restaurant_id,
+    rating: r.rating,
+    comment: r.comment,
+    createdAt: r.created_at,
+    isVerified: r.is_verified,
+    bookingId: r.booking_id,
+    userProfiles: r.user_profiles ? { fullName: r.user_profiles.full_name, avatarUrl: r.user_profiles.avatar_url } : null,
+    clientName: r.user_profiles?.full_name ?? 'Utente Anonimo',
+  }));
   
   // Statistiche
   const { count: totalBookings, error: totalBookingsError } = await supabase
@@ -63,7 +93,7 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
   if (totalBookingsError) throw new Error(`Errore nel contare le prenotazioni: ${totalBookingsError.message}`);
   
   const stats: DashboardStats = {
-    todayBookings: todayBookingsData?.length || 0,
+    todayBookings: bookings?.length || 0,
     totalBookings: totalBookings || 0,
     averageRating: restaurantData?.average_rating || 0,
     totalReviews: restaurantData?.total_reviews || 0,
@@ -73,7 +103,7 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
 
   return {
     stats,
-    todayBookings: (todayBookingsData as unknown as Booking[]) || [],
-    recentReviews: (recentReviewsData as unknown as Review[]) || [],
+    todayBookings: bookings || [],
+    recentReviews: reviews || [],
   };
 };

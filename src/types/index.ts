@@ -58,14 +58,14 @@ export interface Booking {
   restaurantId: string;
   date: string;
   time: string;
-  number_of_guests: number;
+  guests: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   specialRequests?: string;
   qrCode?: string;
   createdAt: Date;
   canReview?: boolean;
-  user_profiles?: { full_name: string; avatar_url: string; } | null;
-  has_arrived?: boolean;
+  userProfiles?: { fullName: string; avatarUrl: string; } | null;
+  hasArrived?: boolean;
 }
 
 export interface Review {
@@ -74,8 +74,9 @@ export interface Review {
   restaurantId: string;
   rating: number;
   comment: string;
-  created_at: string;
+  createdAt: string;
   isVerified?: boolean;
   bookingId?: string;
-  user_profiles?: { full_name: string | null; avatar_url: string | null; } | null;
+  userProfiles?: { fullName: string | null; avatarUrl: string | null; } | null;
+  clientName?: string;
 }

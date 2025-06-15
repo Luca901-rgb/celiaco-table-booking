@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Plus, Edit3, Trash2, Save, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import PdfUploader from '../components/PdfUploader';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMenu } from '@/hooks/useMenu';
+import { useRestaurantMenu } from '@/hooks/useMenu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MenuItem } from '@/types';
 
@@ -18,7 +19,7 @@ const MenuManagement = () => {
   const { profile } = useAuth();
   const restaurantId = profile?.type === 'restaurant' ? (profile as any).restaurant_id : undefined;
 
-  const { data: menuItems = [], isLoading, addMenuItem, isAdding, deleteMenuItem } = useMenu(restaurantId);
+  const { data: menuItems = [], isLoading, addMenuItem, isAdding, deleteMenuItem } = useRestaurantMenu(restaurantId);
   const [isAddingItem, setIsAddingItem] = useState(false);
   
   const [newItem, setNewItem] = useState({

@@ -1,12 +1,13 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { menuService } from '@/services/menuService';
 import { MenuItem } from '@/types';
 import { toast } from '@/hooks/use-toast';
 
-export const useMenu = (restaurantId?: string) => {
+export const useRestaurantMenu = (restaurantId?: string) => {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useQuery<MenuItem[]>({
     queryKey: ['menu', restaurantId],
     queryFn: () => menuService.getRestaurantMenu(restaurantId!),
     enabled: !!restaurantId,

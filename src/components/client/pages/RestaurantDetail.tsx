@@ -14,6 +14,7 @@ import MenuSection from '../components/MenuSection';
 import RestaurantGallery from '../components/RestaurantGallery';
 import { reviewService } from '@/services/reviewService';
 import { useQuery } from '@tanstack/react-query';
+import { Review } from '@/types';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
@@ -21,8 +22,16 @@ const RestaurantDetail = () => {
   const { toggleFavorite, isFavorite, loading: favoritesLoading } = useFavorites();
 
   const { data: restaurant, isLoading } = useRestaurant(id!);
-  const { data: reviews = [], isLoading: reviewsLoading } = useRestaurantReviews(id!);
+  const { data: reviewsFromHook = [], isLoading: reviewsLoading } = useRestaurantReviews(id!);
   const { data: ratingData } = useAverageRating(id!);
+
+  // Map reviews to new structure
+  const reviews: Review[] = reviewsFromHook.map((r: any) => ({
+    ...r,
+    createdAt: r.created_at,
+    userProfiles: r.user_profiles ? { fullName: r.user_profiles.full_name, avatarUrl: r.user_profiles.avatar_url } : null,
+    clientName: r.user_profiles?.full_name ?? 'Utente Anonimo'
+  }));
 
   // Verifica se l'utente può lasciare una recensione
   const { data: canReview = false } = useQuery({
