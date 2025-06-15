@@ -2,9 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LogOut, TrendingUp, Calendar, DollarSign, CreditCard, Users } from 'lucide-react';
+import { LogOut, TrendingUp, Calendar, DollarSign, CreditCard, Users, Building2 } from 'lucide-react';
 import { useAdminAuth, useAdminStats } from '@/hooks/useAdmin';
 import { Skeleton } from '@/components/ui/skeleton';
+import RestaurantStatsTable from './RestaurantStatsTable';
 
 const AdminDashboard = () => {
   const { logout } = useAdminAuth();
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* Statistiche Principali */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Prenotazioni Totali</CardTitle>
@@ -105,7 +106,21 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground">Da riscuotere</p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ristoranti Attivi</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats?.restaurantStats?.length || 0}</div>
+              <p className="text-xs text-muted-foreground">Partner registrati</p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Statistiche Dettagliate Ristoranti */}
+        <RestaurantStatsTable restaurants={stats?.restaurantStats || []} />
 
         {/* Ricavi per Ristorante */}
         <Card>

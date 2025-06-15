@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminStats {
@@ -10,6 +11,19 @@ export interface AdminStats {
     pendingPayments: number;
   }>;
   pendingPayments: number;
+  restaurantStats: Array<{
+    id: string;
+    name: string;
+    totalBookings: number;
+    monthlyBookings: number;
+    averageRating: number;
+    totalReviews: number;
+    monthlyRevenue: number;
+    pendingPayments: number;
+    address: string;
+    phone: string;
+    email: string;
+  }>;
 }
 
 export const adminService = {
@@ -94,6 +108,63 @@ export const adminService = {
         pendingPayments += Number(payment.commission_amount);
       }
     });
+
+    // Statistiche dettagliate per ogni ristorante
+    const { data: restaurants } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('is_active', true);
+
+    const restaurantStats = await Promise.all(
+      (restaurants || []).map(async (restaurant) => {
+        // Prenotazioni totali per questo ristorante
+        const { data: restaurantBookings } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('restaurant_id', restaurant.id)
+          .eq('status', 'completed');
+
+        // Prenotazioni mensili per questo ristorante
+        const { data: restaurantMonthlyBookings } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('restaurant_id', restaurant.id)
+          .eq('status', 'completed')
+          .gte('created_at', firstDayOfMonth.toISOString());
+
+        // Pagamenti per questo ristorante nel mese corrente
+        const { data: restaurantPayments } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('restaurant_id', restaurant.id)
+          .gte('created_at', firstDayOfMonth.toISOString());
+
+        let monthlyRevenue = 0;
+        let restaurantPendingPayments = 0;
+
+        restaurantPayments?.forEach(payment => {
+          if (payment.payment_status === 'paid') {
+            monthlyRevenue += Number(payment.commission_amount);
+          } else {
+            restaurantPendingPayments += Number(payment.commission_amount);
+          }
+        });
+
+        return {
+          id: restaurant.id,
+          name: restaurant.name,
+          totalBookings: restaurantBookings?.length || 0,
+          monthlyBookings: restaurantMonthlyBookings?.length || 0,
+          averageRating: restaurant.average_rating || 0,
+          totalReviews: restaurant.total_reviews || 0,
+          monthlyRevenue,
+          pendingPayments: restaurantPendingPayments,
+          address: restaurant.address || '',
+          phone: restaurant.phone || '',
+          email: restaurant.email || ''
+        };
+      })
+    );
     
     return {
       totalBookings: totalBookingsData?.length || 0,
@@ -104,7 +175,8 @@ export const adminService = {
         revenue: data.revenue,
         pendingPayments: data.pending
       })),
-      pendingPayments
+      pendingPayments,
+      restaurantStats
     };
   }
 };
