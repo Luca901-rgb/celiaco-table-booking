@@ -9,9 +9,31 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password_hash: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password_hash?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           can_review: boolean
+          created_at: string | null
           customer_id: string | null
           date: string
           id: string
@@ -24,6 +46,7 @@ export type Database = {
         }
         Insert: {
           can_review?: boolean
+          created_at?: string | null
           customer_id?: string | null
           date: string
           id?: string
@@ -36,6 +59,7 @@ export type Database = {
         }
         Update: {
           can_review?: boolean
+          created_at?: string | null
           customer_id?: string | null
           date?: string
           id?: string
@@ -180,6 +204,54 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "userprofiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          commission_amount: number
+          created_at: string
+          id: string
+          payment_date: string | null
+          payment_status: string
+          restaurant_id: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          payment_date?: string | null
+          payment_status?: string
+          restaurant_id?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          payment_date?: string | null
+          payment_status?: string
+          restaurant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
             referencedColumns: ["id"]
           },
         ]

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import AuthPage from '@/components/auth/AuthPage';
 import ClientApp from '@/components/client/ClientApp';
 import RestaurantApp from '@/components/restaurant/RestaurantApp';
+import AdminApp from '@/components/admin/AdminApp';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 const Index = () => {
@@ -14,6 +15,7 @@ const Index = () => {
           <Route path="/" element={<AuthPage />} />
           <Route path="/client/*" element={<ClientApp />} />
           <Route path="/restaurant/*" element={<RestaurantApp />} />
+          <Route path="/admin" element={<AdminApp />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
