@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -192,19 +191,19 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
         </div>
       </div>
       
-      {/* Selected restaurant card */}
+      {/* Selected restaurant card - improved responsive design */}
       {selectedRestaurant && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 w-[90vw] max-w-md pointer-events-auto">
-          <Card className="p-4 shadow-2xl bg-white border-2 border-green-200">
-            <div className="space-y-3">
+        <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-center pointer-events-auto">
+          <Card className="w-full max-w-md shadow-2xl bg-white border-2 border-green-200 mx-2">
+            <div className="p-4 space-y-3">
               <div className="flex items-start gap-3">
                 <MapPinCheck className="text-red-600 mt-1 flex-shrink-0" size={20} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-lg text-gray-900">{selectedRestaurant.name}</div>
-                  <div className="text-sm text-gray-600 break-words">{selectedRestaurant.address}</div>
+                  <div className="font-semibold text-base text-gray-900 leading-tight">{selectedRestaurant.name}</div>
+                  <div className="text-sm text-gray-600 break-words leading-tight mt-1">{selectedRestaurant.address}</div>
                   
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <div className="flex items-center gap-1 mt-2">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
                     <span className="text-sm font-medium">{(selectedRestaurant.average_rating || 0).toFixed(1)}</span>
                     <span className="text-xs text-gray-500">({selectedRestaurant.total_reviews || 0} recensioni)</span>
                   </div>
@@ -217,19 +216,18 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
                 </div>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => openInGoogleMaps(selectedRestaurant)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  size="sm"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm px-3 py-2 h-auto min-h-[2.5rem]"
                 >
-                  <Navigation className="w-4 h-4 mr-2" />
-                  Indicazioni
+                  <Navigation className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">Indicazioni</span>
                 </Button>
                 <Button
                   onClick={() => setSelectedRestaurant(null)}
                   variant="outline"
-                  size="sm"
+                  className="sm:flex-shrink-0 text-sm px-3 py-2 h-auto min-h-[2.5rem]"
                 >
                   Chiudi
                 </Button>
