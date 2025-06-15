@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield, Loader2, X } from 'lucide-react';
 import { useAdminAuth } from '@/hooks/useAdmin';
 import { toast } from '@/hooks/use-toast';
 
@@ -12,6 +13,7 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading } = useAdminAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +40,15 @@ const AdminLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="absolute top-4 right-4"
+          onClick={() => navigate('/')}
+        >
+          <X className="h-4 w-4" />
+        </Button>
         <CardHeader className="text-center">
           <Shield className="mx-auto mb-4 text-blue-600" size={48} />
           <CardTitle className="text-2xl font-bold">Dashboard Amministratore</CardTitle>
