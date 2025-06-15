@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 interface Notification {
@@ -17,6 +17,7 @@ interface Notification {
 
 export const useNotifications = (userId: string) => {
   const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
 
   const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications', userId],
@@ -41,12 +42,20 @@ export const useNotifications = (userId: string) => {
     },
   });
 
-  // Sottoscrizione in tempo reale
+  // Sottoscrizione in tempo reale con gestione corretta del canale
   useEffect(() => {
     if (!userId) return;
 
+    // Pulisci il canale precedente se esiste
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Crea un nuovo canale con un nome unico
+    const channelName = `notifications_${userId}_${Date.now()}`;
     const channel = supabase
-      .channel('notifications')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -71,11 +80,17 @@ export const useNotifications = (userId: string) => {
             });
           }
         }
-      )
-      .subscribe();
+      );
+
+    // Sottoscrivi il canale
+    channel.subscribe();
+    channelRef.current = channel;
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [userId, queryClient]);
 
