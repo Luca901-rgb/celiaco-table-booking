@@ -7,75 +7,39 @@ import {
   Users, 
   Star, 
   TrendingUp, 
-  Clock, 
+  Eye,
   CheckCircle,
   XCircle,
-  Eye,
   QrCode
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRestaurantDashboard } from '@/hooks/useRestaurantDashboard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
+import { it } from 'date-fns/locale';
 
 const DashboardPage = () => {
-  // Mock data for dashboard
-  const stats = {
-    todayBookings: 12,
-    totalBookings: 145,
-    averageRating: 4.8,
-    totalReviews: 89,
-    profileViews: 1247,
-    monthlyGrowth: 15.2
-  };
+  const { profile } = useAuth();
+  const { data, isLoading, isError } = useRestaurantDashboard(profile?.restaurant_id);
 
-  const todayBookings = [
-    {
-      id: '1',
-      customerName: 'Marco Rossi',
-      time: '19:00',
-      guests: 2,
-      status: 'confirmed',
-      hasArrived: false
-    },
-    {
-      id: '2',
-      customerName: 'Anna Bianchi',
-      time: '19:30',
-      guests: 4,
-      status: 'confirmed',
-      hasArrived: true
-    },
-    {
-      id: '3',
-      customerName: 'Luigi Verdi',
-      time: '20:00',
-      guests: 3,
-      status: 'pending',
-      hasArrived: false
-    },
-    {
-      id: '4',
-      customerName: 'Sara Neri',
-      time: '20:30',
-      guests: 2,
-      status: 'confirmed',
-      hasArrived: false
-    }
-  ];
+  const stats = data?.stats;
+  const todayBookings = data?.todayBookings;
+  const recentReviews = data?.recentReviews;
 
-  const recentReviews = [
-    {
-      id: '1',
-      customerName: 'Maria G.',
-      rating: 5,
-      comment: 'Esperienza fantastica! Cibo senza glutine incredibile.',
-      date: '2 ore fa'
-    },
-    {
-      id: '2',
-      customerName: 'Giovanni P.',
-      rating: 4,
-      comment: 'Ottimo servizio e ambiente accogliente.',
-      date: '1 giorno fa'
-    }
-  ];
+  if (isLoading) {
+    return <DashboardLoadingSkeleton />;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="min-h-screen w-full bg-green-50 p-4 lg:p-6 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-red-600">Errore</h2>
+          <p className="text-gray-600">Impossibile caricare i dati della dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-green-50 p-4 lg:p-6">
@@ -86,7 +50,7 @@ const DashboardPage = () => {
           <p className="text-green-600">Panoramica del tuo ristorante</p>
         </div>
 
-        {/* Stats Grid - Mobile First Approach */}
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           <Card className="border-green-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -96,8 +60,8 @@ const DashboardPage = () => {
               <Calendar className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-3xl font-bold text-green-700 mb-1">{stats.todayBookings}</div>
-              <p className="text-sm text-green-600">+2 rispetto a ieri</p>
+              <div className="text-3xl font-bold text-green-700 mb-1">{stats?.todayBookings}</div>
+              <p className="text-sm text-green-600">Totali per la giornata</p>
             </CardContent>
           </Card>
 
@@ -109,8 +73,8 @@ const DashboardPage = () => {
               <Users className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-3xl font-bold text-green-700 mb-1">{stats.totalBookings}</div>
-              <p className="text-sm text-green-600">+{stats.monthlyGrowth}% questo mese</p>
+              <div className="text-3xl font-bold text-green-700 mb-1">{stats?.totalBookings}</div>
+              <p className="text-sm text-green-600">Confermate</p>
             </CardContent>
           </Card>
 
@@ -122,8 +86,8 @@ const DashboardPage = () => {
               <Star className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-3xl font-bold text-green-700 mb-1">{stats.averageRating}</div>
-              <p className="text-sm text-green-600">Su {stats.totalReviews} recensioni</p>
+              <div className="text-3xl font-bold text-green-700 mb-1">{stats?.averageRating.toFixed(1)}</div>
+              <p className="text-sm text-green-600">Su {stats?.totalReviews} recensioni</p>
             </CardContent>
           </Card>
 
@@ -135,8 +99,8 @@ const DashboardPage = () => {
               <Eye className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-3xl font-bold text-green-700 mb-1">{stats.profileViews}</div>
-              <p className="text-sm text-green-600">Ultime 30 giorni</p>
+              <div className="text-3xl font-bold text-green-700 mb-1">{stats?.profileViews}</div>
+              <p className="text-sm text-green-600">Non ancora disponibile</p>
             </CardContent>
           </Card>
 
@@ -148,8 +112,8 @@ const DashboardPage = () => {
               <TrendingUp className="h-5 w-5 text-green-600" />
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-3xl font-bold text-green-700 mb-1">+{stats.monthlyGrowth}%</div>
-              <p className="text-sm text-green-600">Rispetto al mese scorso</p>
+              <div className="text-3xl font-bold text-green-700 mb-1">+{stats?.monthlyGrowth}%</div>
+              <p className="text-sm text-green-600">Non ancora disponibile</p>
             </CardContent>
           </Card>
         </div>
@@ -163,20 +127,19 @@ const DashboardPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todayBookings.map((booking) => (
+            {todayBookings && todayBookings.length > 0 ? (
+              todayBookings.map((booking) => (
               <div key={booking.id} className="border border-green-200 rounded-lg p-4 bg-white">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* Time and guests info */}
                   <div className="flex items-center gap-4 sm:min-w-[120px]">
                     <div className="text-center">
-                      <div className="font-semibold text-green-800 text-lg">{booking.time}</div>
-                      <div className="text-sm text-gray-500">{booking.guests} persone</div>
+                      <div className="font-semibold text-green-800 text-lg">{format(new Date(booking.booking_time), 'HH:mm')}</div>
+                      <div className="text-sm text-gray-500">{booking.number_of_guests} persone</div>
                     </div>
                   </div>
                   
-                  {/* Customer info and status */}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-green-800 text-lg mb-2">{booking.customerName}</div>
+                    <div className="font-medium text-green-800 text-lg mb-2">{booking.user_profiles?.full_name || 'Cliente'}</div>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge 
                         variant={
@@ -188,7 +151,7 @@ const DashboardPage = () => {
                         {booking.status === 'confirmed' ? 'Confermata' :
                          booking.status === 'pending' ? 'In Attesa' : 'Annullata'}
                       </Badge>
-                      {booking.hasArrived && (
+                      {booking.has_arrived && (
                         <Badge className="bg-blue-600">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Arrivato
@@ -197,7 +160,6 @@ const DashboardPage = () => {
                     </div>
                   </div>
                   
-                  {/* Action buttons */}
                   <div className="flex flex-col sm:flex-row gap-2 sm:min-w-fit">
                     {booking.status === 'pending' && (
                       <>
@@ -211,7 +173,7 @@ const DashboardPage = () => {
                         </Button>
                       </>
                     )}
-                    {booking.status === 'confirmed' && !booking.hasArrived && (
+                    {booking.status === 'confirmed' && !booking.has_arrived && (
                       <Button size="sm" variant="outline" className="border-green-200 text-green-600">
                         <QrCode className="w-4 h-4 mr-2" />
                         Scansiona QR
@@ -220,7 +182,10 @@ const DashboardPage = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            ) : (
+              <p className="text-center text-gray-500 py-4">Nessuna prenotazione per oggi.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -233,12 +198,13 @@ const DashboardPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentReviews.map((review) => (
+            {recentReviews && recentReviews.length > 0 ? (
+              recentReviews.map((review) => (
               <div key={review.id} className="border border-green-200 rounded-lg p-4 bg-white">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <span className="font-medium text-green-800">{review.customerName}</span>
+                      <span className="font-medium text-green-800">{review.user_profiles?.full_name || 'Utente'}</span>
                       <div className="flex items-center gap-2">
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
@@ -252,7 +218,7 @@ const DashboardPage = () => {
                             />
                           ))}
                         </div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
+                        <span className="text-sm text-gray-500">{format(new Date(review.created_at), 'd MMM yyyy', { locale: it })}</span>
                       </div>
                     </div>
                     <Button size="sm" variant="outline" className="border-green-200 text-green-600 w-fit">
@@ -262,12 +228,72 @@ const DashboardPage = () => {
                   <p className="text-gray-700">{review.comment}</p>
                 </div>
               </div>
-            ))}
+            ))
+            ) : (
+              <p className="text-center text-gray-500 py-4">Nessuna recensione ancora.</p>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
 };
+
+
+const DashboardLoadingSkeleton = () => (
+  <div className="min-h-screen w-full bg-green-50 p-4 lg:p-6">
+    <div className="max-w-7xl mx-auto space-y-6 animate-pulse">
+      <div className="mb-6">
+        <Skeleton className="h-9 w-48 mb-2" />
+        <Skeleton className="h-5 w-64" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="border-green-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-5 w-5" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-4 w-24" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="border-green-200 shadow-sm">
+        <CardHeader className="pb-4">
+          <Skeleton className="h-7 w-56" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="border border-green-200 rounded-lg p-4 bg-white">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-4 sm:min-w-[120px]">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-9 w-24" />
+                  <Skeleton className="h-9 w-24" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
 
 export default DashboardPage;

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,19 +6,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, 
-  Edit3, 
-  Trash2,
-  Save
-} from 'lucide-react';
+import { Plus, Edit3, Trash2, Save, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import PdfUploader from '../components/PdfUploader';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMenu } from '@/hooks/useMenu';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MenuItem } from '@/types';
 
 const MenuManagement = () => {
-  const restaurantId = 'rest1'; // In produzione, questo verrà dal contesto auth
+  const { profile } = useAuth();
+  const restaurantId = profile?.restaurant_id;
+
+  const { data: menuItems = [], isLoading, addMenuItem, deleteMenuItem } = useMenu(restaurantId);
   const [isAddingItem, setIsAddingItem] = useState(false);
-  const [editingItem, setEditingItem] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newItem, setNewItem] = useState({
     name: '',
@@ -27,47 +28,8 @@ const MenuManagement = () => {
     price: '',
     category: 'antipasti',
     allergens: [] as string[],
-    glutenFree: true
+    is_gluten_free: true,
   });
-
-  const [menuItems, setMenuItems] = useState([
-    {
-      id: '1',
-      name: 'Bruschetta Senza Glutine',
-      description: 'Pane artigianale senza glutine con pomodori freschi e basilico',
-      price: '8.50',
-      category: 'antipasti',
-      allergens: ['pomodoro'],
-      glutenFree: true
-    },
-    {
-      id: '2',
-      name: 'Pasta alla Carbonara',
-      description: 'Pasta di riso con guanciale, uova e pecorino romano',
-      price: '14.00',
-      category: 'primi',
-      allergens: ['uova', 'latticini'],
-      glutenFree: true
-    },
-    {
-      id: '3',
-      name: 'Pollo alle Erbe',
-      description: 'Petto di pollo grigliato con erbe mediterranee',
-      price: '18.00',
-      category: 'secondi',
-      allergens: [],
-      glutenFree: true
-    },
-    {
-      id: '4',
-      name: 'Tiramisù Senza Glutine',
-      description: 'Dolce tradizionale con savoiardi senza glutine',
-      price: '6.50',
-      category: 'dolci',
-      allergens: ['uova', 'latticini', 'caffè'],
-      glutenFree: true
-    }
-  ]);
 
   const categories = [
     { id: 'antipasti', name: 'Antipasti' },
@@ -83,7 +45,7 @@ const MenuManagement = () => {
     'pesce', 'crostacei', 'soia', 'sesamo', 'sedano'
   ];
 
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (!newItem.name || !newItem.price) {
       toast({
         title: "Errore",
@@ -93,38 +55,57 @@ const MenuManagement = () => {
       return;
     }
 
-    const item = {
-      id: Date.now().toString(),
-      ...newItem
-    };
+    setIsSubmitting(true);
+    try {
+      await addMenuItem({
+        ...newItem,
+        price: parseFloat(newItem.price),
+        restaurant_id: restaurantId,
+      } as Omit<MenuItem, 'id' | 'created_at' | 'image' | 'is_available'>);
 
-    setMenuItems([...menuItems, item]);
-    setNewItem({
-      name: '',
-      description: '',
-      price: '',
-      category: 'antipasti',
-      allergens: [],
-      glutenFree: true
-    });
-    setIsAddingItem(false);
-    
-    toast({
-      title: "Piatto aggiunto",
-      description: "Il nuovo piatto è stato aggiunto al menù"
-    });
+      setNewItem({
+        name: '',
+        description: '',
+        price: '',
+        category: 'antipasti',
+        allergens: [],
+        is_gluten_free: true
+      });
+      setIsAddingItem(false);
+      
+      toast({
+        title: "Piatto aggiunto",
+        description: "Il nuovo piatto è stato aggiunto al menù"
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiungere il piatto",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDeleteItem = (id: string) => {
-    setMenuItems(menuItems.filter(item => item.id !== id));
-    toast({
-      title: "Piatto rimosso",
-      description: "Il piatto è stato rimosso dal menù"
-    });
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await deleteMenuItem(id);
+      toast({
+        title: "Piatto rimosso",
+        description: "Il piatto è stato rimosso dal menù"
+      });
+    } catch (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile rimuovere il piatto",
+        variant: "destructive"
+      });
+    }
   };
 
   const getItemsByCategory = (category: string) => {
-    return menuItems.filter(item => item.category === category);
+    return menuItems.filter((item: MenuItem) => item.category === category);
   };
 
   return (
@@ -146,7 +127,7 @@ const MenuManagement = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="pdf" className="space-y-4">
+        <Tabs defaultValue="interactive" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="pdf" className="text-xs md:text-sm">Menù PDF</TabsTrigger>
             <TabsTrigger value="interactive" className="text-xs md:text-sm">Menù Interattivo</TabsTrigger>
@@ -154,7 +135,7 @@ const MenuManagement = () => {
 
           {/* PDF Menu Tab */}
           <TabsContent value="pdf" className="space-y-4">
-            <PdfUploader restaurantId={restaurantId} />
+            <PdfUploader restaurantId={restaurantId || ''} />
           </TabsContent>
 
           {/* Interactive Menu Tab */}
@@ -251,8 +232,9 @@ const MenuManagement = () => {
                       onClick={handleAddItem}
                       className="bg-green-600 hover:bg-green-700 w-full"
                       size="sm"
+                      disabled={isSubmitting}
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Save className="w-4 h-4 mr-2" />}
                       Salva Piatto
                     </Button>
                     <Button
@@ -269,7 +251,8 @@ const MenuManagement = () => {
             )}
 
             {/* Menu Categories */}
-            {categories.map(category => {
+            {isLoading && <MenuLoadingSkeleton />}
+            {!isLoading && categories.map(category => {
               const items = getItemsByCategory(category.id);
               if (items.length === 0) return null;
 
@@ -279,7 +262,7 @@ const MenuManagement = () => {
                     <CardTitle className="text-green-800 text-base md:text-lg">{category.name}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {items.map(item => (
+                    {items.map((item: MenuItem) => (
                       <div key={item.id} className="p-3 border border-green-200 rounded-lg overflow-hidden">
                         <div className="space-y-3">
                           <div className="flex flex-col gap-2">
@@ -287,7 +270,7 @@ const MenuManagement = () => {
                               <h4 className="font-semibold text-green-800 text-sm break-words">{item.name}</h4>
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-green-600 text-sm">€{item.price}</span>
-                                {item.glutenFree && (
+                                {item.is_gluten_free && (
                                   <Badge className="bg-green-600 text-xs">Senza Glutine</Badge>
                                 )}
                               </div>
@@ -295,7 +278,7 @@ const MenuManagement = () => {
                             {item.description && (
                               <p className="text-gray-600 text-xs break-words">{item.description}</p>
                             )}
-                            {item.allergens.length > 0 && (
+                            {item.allergens && item.allergens.length > 0 && (
                               <div className="flex flex-wrap gap-1">
                                 <span className="text-xs text-gray-500">Allergeni:</span>
                                 {item.allergens.map(allergen => (
@@ -314,7 +297,8 @@ const MenuManagement = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setEditingItem(item.id)}
+                              // onClick={() => setEditingItem(item.id)}
+                              disabled
                               className="border-green-200 text-green-600 flex-1"
                             >
                               <Edit3 className="w-3 h-3 mr-1" />
@@ -343,5 +327,32 @@ const MenuManagement = () => {
     </div>
   );
 };
+
+const MenuLoadingSkeleton = () => (
+  <div className="space-y-4">
+    {[...Array(3)].map((_, i) => (
+      <Card key={i} className="border-green-200">
+        <CardHeader>
+          <Skeleton className="h-7 w-40" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(2)].map((_, j) => (
+            <div key={j} className="p-3 border border-green-200 rounded-lg">
+              <div className="space-y-3">
+                <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-4 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
 
 export default MenuManagement;
