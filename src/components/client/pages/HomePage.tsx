@@ -1,9 +1,9 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useAverageRating } from '@/hooks/useReviews';
 import { useGeolocation, calculateDistance } from '@/hooks/useGeolocation';
-import { RestaurantFilters, FilterOptions } from '../components/RestaurantFilters';
 import { RestaurantCard } from '../components/RestaurantCard';
 import { RestaurantProfile, ClientProfile } from '@/types';
 
@@ -12,116 +12,7 @@ const HomePage = () => {
   const clientProfile = profile as ClientProfile;
   const { location: userLocation } = useGeolocation();
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState<FilterOptions>({
-    cuisineTypes: [],
-    priceRange: null,
-    minRating: 0,
-    glutenFreeOnly: false,
-    distance: 50
-  });
-
   const { data: restaurants = [], isLoading } = useRestaurants();
-
-  // Use useMemo to avoid infinite re-renders
-  const filteredRestaurants = useMemo(() => {
-    console.log('Filtering restaurants:', restaurants.length);
-    console.log('Current filters:', filters);
-    let filtered = restaurants;
-
-    // Search filter
-    if (searchTerm) {
-      console.log('Applying search filter:', searchTerm);
-      filtered = filtered.filter(restaurant =>
-        restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        restaurant.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        restaurant.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        restaurant.cuisineType?.some(cuisine => 
-          cuisine.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      );
-      console.log('After search filter:', filtered.length);
-    }
-
-    // Cuisine type filter
-    if (filters.cuisineTypes.length > 0) {
-      console.log('Applying cuisine filter:', filters.cuisineTypes);
-      filtered = filtered.filter(restaurant =>
-        restaurant.cuisineType?.some(cuisine => 
-          filters.cuisineTypes.includes(cuisine)
-        )
-      );
-      console.log('After cuisine filter:', filtered.length);
-    }
-
-    // Price range filter
-    if (filters.priceRange) {
-      console.log('Applying price filter:', filters.priceRange);
-      filtered = filtered.filter(restaurant =>
-        restaurant.priceRange === filters.priceRange
-      );
-      console.log('After price filter:', filtered.length);
-    }
-
-    // Gluten free filter
-    if (filters.glutenFreeOnly) {
-      console.log('Applying gluten free filter');
-      filtered = filtered.filter(restaurant =>
-        restaurant.certifications?.includes('Senza Glutine') ||
-        restaurant.certifications?.includes('AIC Certificato')
-      );
-      console.log('After gluten free filter:', filtered.length);
-    }
-
-    // Distance filter (only if user location is available AND restaurant has coordinates)
-    if (userLocation && filters.distance) {
-      console.log('Applying distance filter:', filters.distance);
-      filtered = filtered.filter(restaurant => {
-        // Se il ristorante non ha coordinate, lo manteniamo (non lo filtriamo)
-        if (!restaurant.latitude || !restaurant.longitude) {
-          console.log(`Restaurant ${restaurant.name} has no coordinates, keeping it`);
-          return true;
-        }
-        
-        const distance = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          restaurant.latitude,
-          restaurant.longitude
-        );
-        
-        console.log(`Restaurant ${restaurant.name} distance: ${distance}km`);
-        return distance <= filters.distance!;
-      });
-      console.log('After distance filter:', filtered.length);
-    }
-
-    // Sort by distance if user location is available (non elimina i ristoranti)
-    if (userLocation) {
-      filtered.sort((a, b) => {
-        if (!a.latitude || !a.longitude || !b.latitude || !b.longitude) return 0;
-        
-        const distanceA = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          a.latitude,
-          a.longitude
-        );
-        
-        const distanceB = calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          b.latitude,
-          b.longitude
-        );
-        
-        return distanceA - distanceB;
-      });
-    }
-
-    console.log('Final filtered restaurants:', filtered.length);
-    return filtered;
-  }, [restaurants, searchTerm, filters, userLocation]);
 
   if (isLoading) {
     return (
@@ -170,30 +61,17 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Search and Filters */}
-      <RestaurantFilters
-        searchTerm={searchTerm}
-        filters={filters}
-        onSearch={setSearchTerm}
-        onFilter={setFilters}
-      />
-
       {/* Results Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold text-green-800">
-          {filteredRestaurants.length} ristoranti trovati
+          {restaurants.length} ristoranti disponibili
         </h2>
-        {searchTerm && (
-          <p className="text-sm text-gray-600">
-            Risultati per "{searchTerm}"
-          </p>
-        )}
       </div>
 
       {/* Restaurant List */}
-      {filteredRestaurants.length > 0 ? (
+      {restaurants.length > 0 ? (
         <div className="grid grid-cols-1 gap-4">
-          {filteredRestaurants.map((restaurant) => (
+          {restaurants.map((restaurant) => (
             <RestaurantCardWithRating
               key={restaurant.id}
               restaurant={restaurant}
@@ -207,7 +85,7 @@ const HomePage = () => {
             Nessun ristorante trovato
           </h3>
           <p className="text-green-600">
-            Prova a modificare i filtri di ricerca o cerca in un'area diversa
+            Al momento non ci sono ristoranti disponibili
           </p>
         </div>
       )}
