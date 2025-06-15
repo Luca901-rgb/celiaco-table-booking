@@ -1,7 +1,6 @@
 
 import { useState, useMemo } from "react";
-import { Filter, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useRestaurants } from "@/hooks/useRestaurants";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
@@ -43,15 +42,9 @@ const MapPage = () => {
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-xl font-semibold text-gray-900">
-            Mappa Ristoranti
-          </h1>
-          <Button variant="outline" size="sm">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtri
-          </Button>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900 mb-3">
+          Mappa Ristoranti
+        </h1>
         
         {/* Location Status */}
         <div className="space-y-2">
