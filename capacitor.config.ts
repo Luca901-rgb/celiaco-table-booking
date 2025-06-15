@@ -2,7 +2,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.71710b0168d94c5aa163a996ee7cd6f4',
+  appId: 'com.lovable.celiacotablebooking',
   appName: 'celiaco-table-booking',
   webDir: 'dist',
   bundledWebRuntime: false,
