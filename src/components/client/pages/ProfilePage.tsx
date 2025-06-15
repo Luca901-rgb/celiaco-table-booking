@@ -8,12 +8,12 @@ import { Link } from 'react-router-dom';
 import { ClientProfile } from '@/types';
 
 const ProfilePage = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, logout } = useAuth();
   const clientProfile = profile as ClientProfile;
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
     } catch (error) {
       console.error('Errore durante il logout:', error);
     }
@@ -85,7 +85,7 @@ const ProfilePage = () => {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         <Link to="/client/bookings">
           <Card className="hover:shadow-md transition-shadow cursor-pointer border-green-200">
             <CardContent className="p-4">
