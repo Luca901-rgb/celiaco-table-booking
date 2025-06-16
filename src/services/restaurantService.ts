@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { RestaurantProfile } from '@/types';
 import { DatabaseRestaurant } from '@/types/supabase';
@@ -43,6 +44,24 @@ export const restaurantService = {
       .single();
     
     if (error) throw error;
+    return data ? mapDatabaseToRestaurant(data) : null;
+  },
+
+  async getRestaurantByOwnerId(ownerId: string): Promise<RestaurantProfile | null> {
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No rows returned
+        return null;
+      }
+      throw error;
+    }
     return data ? mapDatabaseToRestaurant(data) : null;
   },
 
@@ -96,7 +115,7 @@ export const restaurantService = {
       throw error;
     }
 
-    // Aggiorna il profilo utente per segnalare che è completo
+    // Aggiorna il profilo utente per segnalare che è completo e associa il ristorante
     const { error: profileError } = await supabase
       .from('userprofiles')
       .update({ 
@@ -108,7 +127,7 @@ export const restaurantService = {
 
     if (profileError) {
       console.error('Error updating user profile:', profileError);
-      // Non blocchiamo per questo errore
+      // Non blocchiamo per questo errore ma logghiamo
     }
 
     return mapDatabaseToRestaurant(data);

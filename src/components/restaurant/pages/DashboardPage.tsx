@@ -1,9 +1,10 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Clock, Users, Star, TrendingUp, MoreHorizontal, User, Calendar, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
-import { useRestaurantDashboard } from '@/hooks/useRestaurantDashboard';
+import { useRestaurantDashboard, useRestaurantByOwner } from '@/hooks/useRestaurantDashboard';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -18,9 +19,9 @@ import { bookingService } from '@/services/bookingService';
 import { useQueryClient } from '@tanstack/react-query';
 
 const DashboardPage = () => {
-  const { profile } = useAuth();
-  const restaurantId = profile?.type === 'restaurant' ? (profile as any).restaurant_id : undefined;
-  const { data, isLoading } = useRestaurantDashboard(restaurantId);
+  const { user } = useAuth();
+  const { data: restaurant } = useRestaurantByOwner();
+  const { data, isLoading } = useRestaurantDashboard(restaurant?.id);
 
   const queryClient = useQueryClient();
   const [updatingBookingId, setUpdatingBookingId] = useState<string | null>(null);
@@ -33,7 +34,7 @@ const DashboardPage = () => {
         title: "Successo",
         description: "Stato della prenotazione aggiornato.",
       });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData', restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ['restaurant-dashboard'] });
     } catch (error) {
       toast({
         title: "Errore",
@@ -53,7 +54,7 @@ const DashboardPage = () => {
         title: "Successo",
         description: "Stato di arrivo del cliente aggiornato.",
       });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData', restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ['restaurant-dashboard'] });
     } catch (error) {
        toast({
         title: "Errore",
@@ -65,7 +66,7 @@ const DashboardPage = () => {
     }
   };
 
-  if (isLoading || !data) {
+  if (isLoading || !data || !restaurant) {
     return <DashboardLoadingSkeleton />;
   }
 
@@ -84,7 +85,7 @@ const DashboardPage = () => {
         {/* Header */}
         <div className="flex flex-col gap-3">
             <div>
-              <h1 className="text-xl md:text-3xl font-bold text-green-800">Dashboard</h1>
+              <h1 className="text-xl md:text-3xl font-bold text-green-800">Dashboard - {restaurant.name}</h1>
               <p className="text-green-600 text-sm">Panoramica del tuo ristorante</p>
             </div>
         </div>
