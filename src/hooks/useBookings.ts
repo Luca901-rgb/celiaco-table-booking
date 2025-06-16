@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookingService } from '@/services/bookingService';
 import { Booking } from '@/types';
@@ -47,13 +46,18 @@ export const useCreateBooking = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (bookingData: any) => {
+    mutationFn: async (bookingData: any) => {
+      console.log('Creating booking with data:', bookingData);
+      
       if (!bookingData.clientId || !bookingData.restaurantId) {
         throw new Error('Client ID and Restaurant ID are required');
       }
-      return bookingService.createBooking(bookingData);
+      
+      return await bookingService.createBooking(bookingData);
     },
     onSuccess: (newBooking, variables) => {
+      console.log('Booking created successfully:', newBooking);
+      
       // Aggiorna immediatamente la cache locale
       queryClient.setQueryData(['bookings', 'client', variables.clientId], (old: Booking[] | undefined) => {
         return [newBooking, ...(old || [])];
@@ -70,9 +74,22 @@ export const useCreateBooking = () => {
     },
     onError: (error) => {
       console.error('Booking creation error:', error);
+      
+      let errorMessage = "Errore nella creazione della prenotazione. Riprova più tardi.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Profilo utente non trovato')) {
+          errorMessage = "Profilo utente non trovato. Assicurati di aver completato la registrazione.";
+        } else if (error.message.includes('Ristorante non trovato')) {
+          errorMessage = "Ristorante non trovato.";
+        } else if (error.message.includes('foreign key constraint')) {
+          errorMessage = "Errore nei dati della prenotazione. Verifica che il profilo sia completo.";
+        }
+      }
+      
       toast({
         title: "Errore",
-        description: "Errore nella creazione della prenotazione. Riprova più tardi.",
+        description: errorMessage,
         variant: "destructive"
       });
     }

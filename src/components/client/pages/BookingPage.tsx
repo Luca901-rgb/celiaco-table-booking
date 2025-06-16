@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Users, MessageSquare, Check } from 'lucide-react';
@@ -10,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurant } from '@/hooks/useRestaurants';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { QRCodeDisplay } from '../components/QRCodeDisplay';
+import { toast } from '@/hooks/use-toast';
 
 const BookingPage = () => {
   const { id } = useParams();
@@ -29,7 +31,17 @@ const BookingPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !restaurant) return;
+    if (!user || !restaurant) {
+      toast({
+        title: "Errore",
+        description: "Devi essere autenticato per effettuare una prenotazione.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('User attempting booking:', { userId: user.id, userType: user.type });
+    console.log('Restaurant:', { restaurantId: restaurant.id, restaurantName: restaurant.name });
 
     setIsSubmitting(true);
     try {
@@ -43,9 +55,15 @@ const BookingPage = () => {
         status: 'pending'
       });
       
+      console.log('Booking created successfully:', booking);
       setConfirmedBooking(booking);
     } catch (error) {
       console.error('Errore creazione prenotazione:', error);
+      toast({
+        title: "Errore nella prenotazione",
+        description: error instanceof Error ? error.message : "Si è verificato un errore imprevisto. Riprova più tardi.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -63,6 +81,17 @@ const BookingPage = () => {
     return (
       <div className="p-6 text-center">
         <div className="text-red-600">Ristorante non trovato</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="p-6 text-center">
+        <div className="text-red-600">Devi essere autenticato per prenotare</div>
+        <Link to="/auth" className="text-green-600 underline">
+          Accedi qui
+        </Link>
       </div>
     );
   }

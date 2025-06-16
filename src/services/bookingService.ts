@@ -23,6 +23,8 @@ const mapDatabaseToBooking = (dbBooking: any): Booking => {
 
 export const bookingService = {
   async getClientBookings(clientId: string): Promise<Booking[]> {
+    console.log('Fetching bookings for client:', clientId);
+    
     const { data, error } = await supabase
       .from('bookings')
       .select(`
@@ -40,6 +42,8 @@ export const bookingService = {
   },
 
   async getRestaurantBookings(restaurantId: string): Promise<Booking[]> {
+    console.log('Fetching bookings for restaurant:', restaurantId);
+    
     const { data, error } = await supabase
       .from('bookings')
       .select('*, userprofiles(first_name, last_name)')
@@ -54,6 +58,32 @@ export const bookingService = {
   },
 
   async createBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
+    console.log('Creating booking with data:', booking);
+    
+    // Verifica che l'utente esista nella tabella userprofiles
+    const { data: userProfile, error: userError } = await supabase
+      .from('userprofiles')
+      .select('id')
+      .eq('id', booking.clientId)
+      .single();
+
+    if (userError || !userProfile) {
+      console.error('User profile not found:', userError);
+      throw new Error('Profilo utente non trovato. Assicurati di aver completato la registrazione.');
+    }
+
+    // Verifica che il ristorante esista
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from('restaurants')
+      .select('id')
+      .eq('id', booking.restaurantId)
+      .single();
+
+    if (restaurantError || !restaurant) {
+      console.error('Restaurant not found:', restaurantError);
+      throw new Error('Ristorante non trovato.');
+    }
+
     // Genera QR code univoco
     const qrCode = `booking-${Date.now()}-${booking.restaurantId}-${booking.clientId}`;
     
@@ -70,6 +100,8 @@ export const bookingService = {
       has_arrived: booking.hasArrived || false
     };
     
+    console.log('Inserting booking data:', dbBookingData);
+    
     const { data, error } = await supabase
       .from('bookings')
       .insert(dbBookingData)
@@ -80,6 +112,8 @@ export const bookingService = {
       console.error('Error creating booking:', error);
       throw error;
     }
+    
+    console.log('Booking created successfully:', data);
     return mapDatabaseToBooking(data);
   },
 
