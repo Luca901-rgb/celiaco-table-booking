@@ -37,12 +37,15 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
 
   const { data: todayBookingsData, error: todayBookingsError } = await supabase
     .from('bookings')
-    .select('*, user_profiles(full_name, avatar_url)')
+    .select('*, user_profiles(first_name, last_name)')
     .eq('restaurant_id', restaurantId)
     .eq('date', todayStr)
     .order('time', { ascending: true });
   
-  if (todayBookingsError) throw new Error(`Errore nel caricare le prenotazioni di oggi: ${todayBookingsError.message}`);
+  if (todayBookingsError) {
+    console.error('Error fetching today bookings:', todayBookingsError);
+    // Non blocchiamo per questo errore, restituiamo array vuoto
+  }
 
   const bookings: Booking[] = (todayBookingsData || []).map((b: any) => ({
     id: b.id,
@@ -56,19 +59,25 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     qrCode: b.qr_code,
     createdAt: new Date(b.created_at),
     canReview: b.can_review,
-    userProfiles: b.user_profiles ? { fullName: b.user_profiles.full_name, avatarUrl: b.user_profiles.avatar_url } : null,
+    userProfiles: b.user_profiles ? { 
+      fullName: `${b.user_profiles.first_name || ''} ${b.user_profiles.last_name || ''}`.trim(), 
+      avatarUrl: '' 
+    } : null,
     hasArrived: b.has_arrived,
   }));
 
   // Recensioni recenti
   const { data: recentReviewsData, error: recentReviewsError } = await supabase
     .from('reviews')
-    .select('*, user_profiles(full_name, avatar_url)')
+    .select('*, user_profiles(first_name, last_name)')
     .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false })
     .limit(5);
 
-  if (recentReviewsError) throw new Error(`Errore nel caricare le recensioni: ${recentReviewsError.message}`);
+  if (recentReviewsError) {
+    console.error('Error fetching recent reviews:', recentReviewsError);
+    // Non blocchiamo per questo errore, restituiamo array vuoto
+  }
 
   const reviews: Review[] = (recentReviewsData || []).map((r: any) => ({
     id: r.id,
@@ -79,8 +88,11 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     createdAt: r.created_at,
     isVerified: r.is_verified,
     bookingId: r.booking_id,
-    userProfiles: r.user_profiles ? { fullName: r.user_profiles.full_name, avatarUrl: r.user_profiles.avatar_url } : null,
-    clientName: r.user_profiles?.full_name ?? 'Utente Anonimo',
+    userProfiles: r.user_profiles ? { 
+      fullName: `${r.user_profiles.first_name || ''} ${r.user_profiles.last_name || ''}`.trim(), 
+      avatarUrl: '' 
+    } : null,
+    clientName: r.user_profiles ? `${r.user_profiles.first_name || ''} ${r.user_profiles.last_name || ''}`.trim() : 'Utente Anonimo',
   }));
   
   // Statistiche
@@ -90,7 +102,10 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     .eq('restaurant_id', restaurantId)
     .eq('status', 'confirmed');
   
-  if (totalBookingsError) throw new Error(`Errore nel contare le prenotazioni: ${totalBookingsError.message}`);
+  if (totalBookingsError) {
+    console.error('Error counting bookings:', totalBookingsError);
+    // Non blocchiamo per questo errore
+  }
   
   const stats: DashboardStats = {
     todayBookings: bookings?.length || 0,

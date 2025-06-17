@@ -1,8 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types';
 
 const mapDatabaseToBooking = (dbBooking: any): Booking => {
-  const fullName = dbBooking.userprofiles ? `${dbBooking.userprofiles.first_name || ''} ${dbBooking.userprofiles.last_name || ''}`.trim() : '';
+  const fullName = dbBooking.user_profiles ? `${dbBooking.user_profiles.first_name || ''} ${dbBooking.user_profiles.last_name || ''}`.trim() : '';
 
   return {
     id: dbBooking.id,
@@ -17,7 +18,7 @@ const mapDatabaseToBooking = (dbBooking: any): Booking => {
     createdAt: new Date(dbBooking.created_at || Date.now()),
     canReview: dbBooking.can_review || false,
     hasArrived: dbBooking.has_arrived || false,
-    userProfiles: dbBooking.userprofiles ? { fullName: fullName, avatarUrl: '' } : null
+    userProfiles: dbBooking.user_profiles ? { fullName: fullName, avatarUrl: '' } : null
   };
 };
 
@@ -29,7 +30,7 @@ export const bookingService = {
       .from('bookings')
       .select(`
         *,
-        userprofiles(first_name, last_name)
+        user_profiles(first_name, last_name)
       `)
       .eq('customer_id', clientId)
       .order('date', { ascending: false });
@@ -46,7 +47,7 @@ export const bookingService = {
     
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, userprofiles(first_name, last_name)')
+      .select('*, user_profiles(first_name, last_name)')
       .eq('restaurant_id', restaurantId)
       .order('date', { ascending: false });
     
@@ -60,9 +61,9 @@ export const bookingService = {
   async createBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
     console.log('Creating booking with data:', booking);
     
-    // Verifica che l'utente esista nella tabella userprofiles
+    // Verifica che l'utente esista nella tabella user_profiles
     const { data: userProfile, error: userError } = await supabase
-      .from('userprofiles')
+      .from('user_profiles')
       .select('id')
       .eq('id', booking.clientId)
       .single();
@@ -105,7 +106,7 @@ export const bookingService = {
     const { data, error } = await supabase
       .from('bookings')
       .insert(dbBookingData)
-      .select('*, userprofiles(first_name, last_name)')
+      .select('*, user_profiles(first_name, last_name)')
       .single();
     
     if (error) {
@@ -128,7 +129,7 @@ export const bookingService = {
       .from('bookings')
       .update(updateData)
       .eq('id', bookingId)
-      .select('*, userprofiles(first_name, last_name)')
+      .select('*, user_profiles(first_name, last_name)')
       .single();
     
     if (error) {
@@ -143,7 +144,7 @@ export const bookingService = {
       .from('bookings')
       .update({ has_arrived: hasArrived } as any)
       .eq('id', bookingId)
-      .select('*, userprofiles(first_name, last_name)')
+      .select('*, user_profiles(first_name, last_name)')
       .single();
 
     if (error) {
@@ -156,7 +157,7 @@ export const bookingService = {
   async getBookingById(bookingId: string): Promise<Booking | null> {
     const { data, error } = await supabase
       .from('bookings')
-      .select('*, userprofiles(first_name, last_name)')
+      .select('*, user_profiles(first_name, last_name)')
       .eq('id', bookingId)
       .single();
     

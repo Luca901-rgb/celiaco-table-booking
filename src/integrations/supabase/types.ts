@@ -85,7 +85,7 @@ export type Database = {
             foreignKeyName: "fk_bookings_customer"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "userprofiles"
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -206,7 +206,7 @@ export type Database = {
             foreignKeyName: "notifications_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "userprofiles"
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -407,7 +407,7 @@ export type Database = {
             foreignKeyName: "fk_reviews_customer"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "userprofiles"
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -426,7 +426,7 @@ export type Database = {
           },
         ]
       }
-      userprofiles: {
+      user_profiles: {
         Row: {
           address: string | null
           city: string | null
