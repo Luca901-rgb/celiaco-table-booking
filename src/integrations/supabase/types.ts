@@ -378,6 +378,7 @@ export type Database = {
         Row: {
           booking_id: string | null
           comment: string | null
+          created_at: string | null
           customer_id: string | null
           id: string
           is_verified: boolean | null
@@ -387,6 +388,7 @@ export type Database = {
         Insert: {
           booking_id?: string | null
           comment?: string | null
+          created_at?: string | null
           customer_id?: string | null
           id?: string
           is_verified?: boolean | null
@@ -396,6 +398,7 @@ export type Database = {
         Update: {
           booking_id?: string | null
           comment?: string | null
+          created_at?: string | null
           customer_id?: string | null
           id?: string
           is_verified?: boolean | null

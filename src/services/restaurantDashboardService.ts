@@ -22,6 +22,8 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     throw new Error("ID Ristorante richiesto");
   }
 
+  console.log('Loading dashboard data for restaurant:', restaurantId);
+
   // Info base ristorante (per rating)
   const { data: restaurantData, error: restaurantError } = await supabase
     .from('restaurants')
@@ -29,7 +31,10 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     .eq('id', restaurantId)
     .single();
 
-  if (restaurantError) throw new Error(`Errore nel caricare i dati del ristorante: ${restaurantError.message}`);
+  if (restaurantError) {
+    console.error('Error fetching restaurant data:', restaurantError);
+    throw new Error(`Errore nel caricare i dati del ristorante: ${restaurantError.message}`);
+  }
 
   // Prenotazioni di oggi
   const today = new Date();
@@ -66,7 +71,7 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     hasArrived: b.has_arrived,
   }));
 
-  // Recensioni recenti
+  // Recensioni recenti con la nuova colonna created_at
   const { data: recentReviewsData, error: recentReviewsError } = await supabase
     .from('reviews')
     .select('*, user_profiles(first_name, last_name)')
@@ -85,7 +90,7 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     restaurantId: r.restaurant_id,
     rating: r.rating,
     comment: r.comment,
-    createdAt: r.created_at,
+    createdAt: r.created_at, // Usa la colonna created_at del database
     isVerified: r.is_verified,
     bookingId: r.booking_id,
     userProfiles: r.user_profiles ? { 
@@ -115,6 +120,12 @@ export const getRestaurantDashboardData = async (restaurantId: string): Promise<
     profileViews: 0, 
     monthlyGrowth: 0
   };
+
+  console.log('Dashboard data loaded successfully:', {
+    todayBookings: bookings.length,
+    recentReviews: reviews.length,
+    stats
+  });
 
   return {
     stats,

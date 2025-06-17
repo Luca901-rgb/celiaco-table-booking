@@ -31,7 +31,7 @@ export const reviewService = {
       restaurantId: review.restaurant_id,
       rating: review.rating,
       comment: review.comment || '',
-      date: new Date(), // Dovremmo aggiungere created_at al database se non esiste
+      createdAt: review.created_at, // Ora usiamo la colonna created_at dal database
       clientName: review.user_profiles 
         ? `${review.user_profiles.first_name} ${review.user_profiles.last_name}`.trim()
         : 'Utente Anonimo',
