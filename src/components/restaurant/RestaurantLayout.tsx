@@ -22,12 +22,17 @@ interface RestaurantLayoutProps {
 const RestaurantLayout = ({ children }: RestaurantLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { logout } = useAuth();
 
-  const handleSignOut = () => {
-    // Implementa la logica di logout qui
-    // Per ora navighiamo alla pagina di login
-    navigate('/');
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Force navigate even if logout fails
+      navigate('/');
+    }
   };
 
   const navigation = [

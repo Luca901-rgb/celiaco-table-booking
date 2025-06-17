@@ -1,75 +1,34 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Star, MessageSquare, Reply, TrendingUp, Award } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
 
 const ReviewsManagement = () => {
+  const { user } = useAuth();
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   
-  const [reviews, setReviews] = useState([
-    {
-      id: '1',
-      customerName: 'Maria Gonzalez',
-      rating: 5,
-      title: 'Esperienza fantastica!',
-      comment: 'Finalmente un ristorante dove posso mangiare senza preoccupazioni. Il cibo è delizioso e il personale molto attento alle esigenze dei celiaci. Tornerò sicuramente!',
-      date: '2024-01-14',
-      verified: true,
-      reply: null,
-      helpful: 12
-    },
-    {
-      id: '2',
-      customerName: 'Giovanni Pellegrini',
-      rating: 4,
-      title: 'Ottimo servizio',
-      comment: 'Ambiente accogliente e piatti di qualità. La pizza senza glutine è una delle migliori che abbia mai mangiato. Unico neo: tempi di attesa un po\' lunghi.',
-      date: '2024-01-12',
-      verified: true,
-      reply: {
-        text: 'Grazie per la recensione! Stiamo lavorando per migliorare i tempi di servizio. Vi aspettiamo presto!',
-        date: '2024-01-13'
-      },
-      helpful: 8
-    },
-    {
-      id: '3',
-      customerName: 'Anna Bianchi',
-      rating: 5,
-      title: 'Perfetto per celiaci',
-      comment: 'Menù completamente dedicato ai celiaci con tantissime opzioni. Il tiramisù senza glutine è spettacolare! Staff preparato e disponibile.',
-      date: '2024-01-11',
-      verified: true,
-      reply: null,
-      helpful: 15
-    },
-    {
-      id: '4',
-      customerName: 'Marco Rossi',
-      rating: 3,
-      title: 'Buono ma migliorabile',
-      comment: 'Cibo buono e sicuro per celiaci, ma il rapporto qualità-prezzo potrebbe essere migliore. Servizio cordiale.',
-      date: '2024-01-10',
-      verified: false,
-      reply: null,
-      helpful: 3
-    }
-  ]);
+  // Ottieni l'ID del ristorante dal contesto utente
+  const restaurantId = user?.restaurant_id || '';
+  
+  const { data: reviews = [], isLoading, error } = useRestaurantReviews(restaurantId);
+  const { data: ratingData } = useAverageRating(restaurantId);
 
   const stats = {
-    averageRating: 4.3,
-    totalReviews: reviews.length,
+    averageRating: ratingData?.average || 0,
+    totalReviews: ratingData?.count || 0,
     fiveStars: reviews.filter(r => r.rating === 5).length,
     fourStars: reviews.filter(r => r.rating === 4).length,
     threeStars: reviews.filter(r => r.rating === 3).length,
     twoStars: reviews.filter(r => r.rating === 2).length,
     oneStar: reviews.filter(r => r.rating === 1).length,
-    verified: reviews.filter(r => r.verified).length
+    verified: reviews.filter(r => r.isVerified).length
   };
 
   const handleReply = (reviewId: string) => {
@@ -82,18 +41,7 @@ const ReviewsManagement = () => {
       return;
     }
 
-    setReviews(reviews.map(review => 
-      review.id === reviewId 
-        ? { 
-            ...review, 
-            reply: {
-              text: replyText,
-              date: new Date().toISOString().split('T')[0]
-            }
-          }
-        : review
-    ));
-
+    // Qui implementerai la logica per salvare la risposta nel database
     setReplyingTo(null);
     setReplyText('');
     
@@ -133,6 +81,32 @@ const ReviewsManagement = () => {
       </div>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Errore nel caricamento</h2>
+          <p className="text-gray-600">Non è stato possibile caricare le recensioni.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -195,16 +169,6 @@ const ReviewsManagement = () => {
                 {stats.verified}
               </Badge>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Risposte Inviate</span>
-              <Badge variant="secondary">
-                {reviews.filter(r => r.reply).length}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Media Mensile</span>
-              <Badge variant="outline">+15%</Badge>
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -218,105 +182,97 @@ const ReviewsManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {reviews.map(review => (
-            <div key={review.id} className="p-4 border border-green-200 rounded-lg space-y-4">
-              {/* Review Header */}
-              <div className="flex items-start justify-between">
+          {reviews.length === 0 ? (
+            <div className="text-center py-8">
+              <Star className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">Nessuna recensione ancora</p>
+              <p className="text-sm text-gray-400">Le recensioni dei clienti appariranno qui una volta che inizieranno a lasciare feedback!</p>
+            </div>
+          ) : (
+            reviews.map(review => (
+              <div key={review.id} className="p-4 border border-green-200 rounded-lg space-y-4">
+                {/* Review Header */}
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+                        {review.clientName ? review.clientName.charAt(0) : 'U'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-green-800">{review.clientName || 'Utente Anonimo'}</span>
+                          {review.isVerified && (
+                            <Badge className="bg-green-600 text-xs">
+                              <Award className="w-3 h-3 mr-1" />
+                              Verificata
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex">{renderStars(review.rating)}</div>
+                          <span className="text-sm text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString('it-IT')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review Content */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {review.customerName.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-green-800">{review.customerName}</span>
-                        {review.verified && (
-                          <Badge className="bg-green-600 text-xs">
-                            <Award className="w-3 h-3 mr-1" />
-                            Verificata
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex">{renderStars(review.rating)}</div>
-                        <span className="text-sm text-gray-500">{review.date}</span>
-                      </div>
+                  {review.comment && <p className="text-gray-700">{review.comment}</p>}
+                </div>
+
+                {/* Reply Form */}
+                {replyingTo === review.id && (
+                  <div className="space-y-3">
+                    <Textarea
+                      placeholder="Scrivi la tua risposta..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      className="border-green-200 focus:border-green-500"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleReply(review.id)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        Invia Risposta
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setReplyingTo(null);
+                          setReplyText('');
+                        }}
+                      >
+                        Annulla
+                      </Button>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-500">{review.helpful} utili</div>
-                </div>
-              </div>
-
-              {/* Review Content */}
-              <div className="space-y-2">
-                {review.title && (
-                  <h4 className="font-semibold text-green-800">{review.title}</h4>
                 )}
-                <p className="text-gray-700">{review.comment}</p>
-              </div>
 
-              {/* Restaurant Reply */}
-              {review.reply && (
-                <div className="ml-4 p-3 bg-green-50 border-l-4 border-green-600 rounded">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Reply className="w-4 h-4 text-green-600" />
-                    <span className="font-medium text-green-800">Risposta del ristorante</span>
-                    <span className="text-xs text-gray-500">{review.reply.date}</span>
-                  </div>
-                  <p className="text-gray-700">{review.reply.text}</p>
-                </div>
-              )}
-
-              {/* Reply Form */}
-              {replyingTo === review.id && (
-                <div className="space-y-3">
-                  <Textarea
-                    placeholder="Scrivi la tua risposta..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    className="border-green-200 focus:border-green-500"
-                    rows={3}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleReply(review.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Invia Risposta
-                    </Button>
+                {/* Action Buttons */}
+                {replyingTo !== review.id && (
+                  <div className="flex justify-end">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyText('');
-                      }}
+                      onClick={() => setReplyingTo(review.id)}
+                      className="border-green-200 text-green-600 hover:bg-green-50"
                     >
-                      Annulla
+                      <Reply className="w-4 h-4 mr-2" />
+                      Rispondi
                     </Button>
                   </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              {!review.reply && replyingTo !== review.id && (
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setReplyingTo(review.id)}
-                    className="border-green-200 text-green-600 hover:bg-green-50"
-                  >
-                    <Reply className="w-4 h-4 mr-2" />
-                    Rispondi
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

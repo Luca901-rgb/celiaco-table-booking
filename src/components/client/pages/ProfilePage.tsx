@@ -4,18 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Calendar, Bell, LogOut, MapPin, Phone, Mail, Edit } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ClientProfile } from '@/types';
 
 const ProfilePage = () => {
   const { user, profile, logout } = useAuth();
+  const navigate = useNavigate();
   const clientProfile = profile as ClientProfile;
 
   const handleSignOut = async () => {
     try {
       await logout();
+      navigate('/');
     } catch (error) {
       console.error('Errore durante il logout:', error);
+      // Force navigate even if logout fails
+      navigate('/');
     }
   };
 

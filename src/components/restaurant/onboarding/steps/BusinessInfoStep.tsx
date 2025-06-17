@@ -24,8 +24,6 @@ const categories = [
 const cuisineTypes = [
   'Italiana',
   'Mediterranea',
-  'Vegetariana',
-  'Vegana',
   'Senza Glutine',
   'Pesce',
   'Carne',
