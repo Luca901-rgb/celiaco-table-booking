@@ -17,7 +17,7 @@ export const reviewService = {
       .from('reviews')
       .select(`
         *,
-        userprofiles!fk_reviews_customer(first_name, last_name)
+        user_profiles!fk_reviews_customer(first_name, last_name)
       `)
       .eq('restaurant_id', restaurantId)
       .order('created_at', { ascending: false });
@@ -32,8 +32,8 @@ export const reviewService = {
       rating: review.rating,
       comment: review.comment || '',
       date: new Date(), // Dovremmo aggiungere created_at al database se non esiste
-      clientName: review.userprofiles 
-        ? `${review.userprofiles.first_name} ${review.userprofiles.last_name}`.trim()
+      clientName: review.user_profiles 
+        ? `${review.user_profiles.first_name} ${review.user_profiles.last_name}`.trim()
         : 'Utente Anonimo',
       isVerified: review.is_verified || false,
       bookingId: review.booking_id

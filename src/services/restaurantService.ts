@@ -117,7 +117,7 @@ export const restaurantService = {
 
     // Aggiorna il profilo utente per segnalare che è completo e associa il ristorante
     const { error: profileError } = await supabase
-      .from('userprofiles')
+      .from('user_profiles')
       .update({ 
         address: restaurantData.address,
         city: restaurantData.city,

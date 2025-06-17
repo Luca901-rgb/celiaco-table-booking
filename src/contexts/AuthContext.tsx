@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Loading user profile for:', userId);
       const { data: userProfile, error } = await supabase
-        .from('userprofiles')
+        .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
@@ -122,8 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {
             ...baseProfile,
             type: 'client',
-            phone: userProfile.phone,
-            address: userProfile.address,
+            phone: userProfile.phone || '',
+            address: userProfile.address || '',
             allergies: [],
             favoriteRestaurants: []
           } as ClientProfile;
@@ -339,7 +339,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const { error } = await supabase
-        .from('userprofiles')
+        .from('user_profiles')
         .update({
           first_name: data.name?.split(' ')[0],
           last_name: data.name?.split(' ')[1] || '',
