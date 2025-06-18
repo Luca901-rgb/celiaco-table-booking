@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,14 +7,41 @@ import { Star, MessageSquare, Reply, TrendingUp, Award } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRestaurantReviews, useAverageRating } from '@/hooks/useReviews';
+import { supabase } from '@/integrations/supabase/client';
 
 const ReviewsManagement = () => {
   const { user } = useAuth();
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [restaurantId, setRestaurantId] = useState<string>('');
   
-  // Ottieni l'ID del ristorante dal contesto utente
-  const restaurantId = user?.restaurant_id || '';
+  // Get restaurant ID for the current user
+  useEffect(() => {
+    const getRestaurantId = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data: restaurant, error } = await supabase
+          .from('restaurants')
+          .select('id')
+          .eq('owner_id', user.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching restaurant:', error);
+          return;
+        }
+        
+        if (restaurant) {
+          setRestaurantId(restaurant.id);
+        }
+      } catch (error) {
+        console.error('Error in getRestaurantId:', error);
+      }
+    };
+    
+    getRestaurantId();
+  }, [user?.id]);
   
   const { data: reviews = [], isLoading, error } = useRestaurantReviews(restaurantId);
   const { data: ratingData } = useAverageRating(restaurantId);
