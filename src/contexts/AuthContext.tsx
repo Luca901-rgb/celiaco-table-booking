@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -83,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: userProfile, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
         
       if (error) {
@@ -97,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: userProfile.id,
           email: userProfile.email,
           name: `${userProfile.first_name} ${userProfile.last_name}`.trim(),
-          type: userProfile.user_type as 'client' | 'restaurant',
+          type: userProfile.user_type === 'customer' ? 'client' : userProfile.user_type as 'client' | 'restaurant',
           profileComplete: true,
           createdAt: new Date()
         };
@@ -155,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Prima prova a prenderlo dai metadati
           if (session.user.user_metadata?.user_type) {
-            userType = session.user.user_metadata.user_type;
+            userType = session.user.user_metadata.user_type === 'customer' ? 'client' : session.user.user_metadata.user_type;
             console.log('User type from metadata:', userType);
           } else {
             // Se non c'è nei metadati, prova dal profilo
@@ -217,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           let userType: 'client' | 'restaurant' = 'client';
           
           if (session.user.user_metadata?.user_type) {
-            userType = session.user.user_metadata.user_type;
+            userType = session.user.user_metadata.user_type === 'customer' ? 'client' : session.user.user_metadata.user_type;
             console.log('User type from metadata:', userType);
           }
           
@@ -308,7 +307,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             name,
-            user_type: type,
+            user_type: type === 'client' ? 'customer' : type,
             first_name: name.split(' ')[0],
             last_name: name.split(' ')[1] || ''
           }
@@ -346,7 +345,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: data.phone,
           address: data.address
         })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
         
       if (error) throw error;
       

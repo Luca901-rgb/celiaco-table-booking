@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Booking } from '@/types';
 
@@ -61,16 +60,43 @@ export const bookingService = {
   async createBooking(booking: Omit<Booking, 'id' | 'createdAt'>): Promise<Booking> {
     console.log('Creating booking with data:', booking);
     
-    // Verifica che l'utente esista nella tabella user_profiles
+    // Prima verifichiamo che l'utente esista nella tabella user_profiles usando l'UUID
     const { data: userProfile, error: userError } = await supabase
       .from('user_profiles')
       .select('id')
       .eq('id', booking.clientId)
       .single();
 
-    if (userError || !userProfile) {
+    if (userError) {
       console.error('User profile not found:', userError);
-      throw new Error('Profilo utente non trovato. Assicurati di aver completato la registrazione.');
+      
+      // Se il profilo non esiste, proviamo a crearlo usando i dati di auth.users
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        throw new Error('Utente non autenticato. Effettua il login per continuare.');
+      }
+
+      // Creiamo il profilo utente se non esiste
+      const { data: newProfile, error: createError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: user.id,
+          user_id: user.id,
+          email: user.email || '',
+          first_name: user.user_metadata?.first_name || user.email?.split('@')[0] || 'Utente',
+          last_name: user.user_metadata?.last_name || '',
+          user_type: 'customer'
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating user profile:', createError);
+        throw new Error('Errore nella creazione del profilo utente. Riprova più tardi.');
+      }
+
+      console.log('User profile created:', newProfile);
     }
 
     // Verifica che il ristorante esista
