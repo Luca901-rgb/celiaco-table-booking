@@ -63,46 +63,19 @@ export const bookingService = {
     // Prima verifichiamo che l'utente esista nella tabella user_profiles usando l'UUID
     const { data: userProfile, error: userError } = await supabase
       .from('user_profiles')
-      .select('id')
+      .select('id, first_name, last_name')
       .eq('id', booking.clientId)
       .single();
 
     if (userError) {
       console.error('User profile not found:', userError);
-      
-      // Se il profilo non esiste, proviamo a crearlo usando i dati di auth.users
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        throw new Error('Utente non autenticato. Effettua il login per continuare.');
-      }
-
-      // Creiamo il profilo utente se non esiste
-      const { data: newProfile, error: createError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: user.id,
-          user_id: user.id,
-          email: user.email || '',
-          first_name: user.user_metadata?.first_name || user.email?.split('@')[0] || 'Utente',
-          last_name: user.user_metadata?.last_name || '',
-          user_type: 'customer'
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Error creating user profile:', createError);
-        throw new Error('Errore nella creazione del profilo utente. Riprova più tardi.');
-      }
-
-      console.log('User profile created:', newProfile);
+      throw new Error('Profilo utente non trovato. Assicurati di aver completato la registrazione.');
     }
 
     // Verifica che il ristorante esista
     const { data: restaurant, error: restaurantError } = await supabase
       .from('restaurants')
-      .select('id')
+      .select('id, name')
       .eq('id', booking.restaurantId)
       .single();
 
@@ -111,8 +84,15 @@ export const bookingService = {
       throw new Error('Ristorante non trovato.');
     }
 
-    // Genera QR code univoco
-    const qrCode = `booking-${Date.now()}-${booking.restaurantId}-${booking.clientId}`;
+    // Genera QR code univoco e strutturato
+    const timestamp = Date.now();
+    const qrCodeData = {
+      bookingId: '', // Sarà aggiornato dopo l'inserimento
+      restaurantId: booking.restaurantId,
+      clientId: booking.clientId,
+      timestamp,
+      type: 'booking'
+    };
     
     const dbBookingData = {
       customer_id: booking.clientId,
@@ -122,7 +102,7 @@ export const bookingService = {
       number_of_guests: booking.guests,
       status: booking.status,
       special_requests: booking.specialRequests || null,
-      qr_code: qrCode,
+      qr_code: `booking-${timestamp}-${booking.restaurantId}-${booking.clientId}`,
       can_review: false,
       has_arrived: booking.hasArrived || false
     };
@@ -137,11 +117,31 @@ export const bookingService = {
     
     if (error) {
       console.error('Error creating booking:', error);
-      throw error;
+      throw new Error('Errore nella creazione della prenotazione. Riprova più tardi.');
+    }
+    
+    // Aggiorna il QR code con l'ID della prenotazione
+    const finalQrCodeData = {
+      ...qrCodeData,
+      bookingId: data.id
+    };
+    
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ 
+        qr_code: JSON.stringify(finalQrCodeData)
+      })
+      .eq('id', data.id);
+
+    if (updateError) {
+      console.warn('Warning: Could not update QR code with booking ID:', updateError);
     }
     
     console.log('Booking created successfully:', data);
-    return mapDatabaseToBooking(data);
+    return mapDatabaseToBooking({
+      ...data,
+      qr_code: JSON.stringify(finalQrCodeData)
+    });
   },
 
   async updateBookingStatus(bookingId: string, status: Booking['status']): Promise<Booking> {

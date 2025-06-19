@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Users, MessageSquare, Check } from 'lucide-react';
@@ -29,12 +28,39 @@ const BookingPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
 
+  // Funzione per validare l'orario
+  const isValidTime = (time: string): boolean => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const timeInMinutes = hours * 60 + minutes;
+    
+    // Pranzo: 12:00-15:00 (720-900 minuti)
+    const lunchStart = 12 * 60; // 720
+    const lunchEnd = 15 * 60; // 900
+    
+    // Cena: 19:30-22:30 (1170-1350 minuti)
+    const dinnerStart = 19 * 60 + 30; // 1170
+    const dinnerEnd = 22 * 60 + 30; // 1350
+    
+    return (timeInMinutes >= lunchStart && timeInMinutes <= lunchEnd) ||
+           (timeInMinutes >= dinnerStart && timeInMinutes <= dinnerEnd);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !restaurant) {
       toast({
         title: "Errore",
         description: "Devi essere autenticato per effettuare una prenotazione.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validazione orario
+    if (!isValidTime(bookingData.time)) {
+      toast({
+        title: "Orario non valido",
+        description: "Gli orari di prenotazione sono: 12:00-15:00 e 19:30-22:30",
         variant: "destructive"
       });
       return;
@@ -192,6 +218,9 @@ const BookingPage = () => {
                   onChange={(e) => setBookingData({...bookingData, time: e.target.value})}
                   required
                 />
+                <p className="text-xs text-green-600">
+                  Orari disponibili: 12:00-15:00 e 19:30-22:30
+                </p>
               </div>
 
               {/* Numero ospiti */}

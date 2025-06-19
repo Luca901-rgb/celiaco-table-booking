@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminStats {
@@ -30,14 +29,6 @@ export const adminService = {
   async login(email: string, password: string) {
     console.log('Admin login attempt for:', email);
     
-    // Prima verifichiamo se la tabella admins esiste e ha dei dati
-    const { data: allAdmins, error: listError } = await supabase
-      .from('admins')
-      .select('*');
-    
-    console.log('All admins in database:', allAdmins);
-    console.log('List error:', listError);
-    
     // Verifica che l'admin esista nel database
     const { data, error } = await supabase
       .from('admins')
@@ -57,10 +48,13 @@ export const adminService = {
       throw new Error('Credenziali non valide');
     }
     
-    // Per semplicità, accettiamo qualsiasi password per l'admin esistente
-    // In un'implementazione reale, dovresti verificare l'hash della password
-    console.log('Admin login successful, returning:', { admin: data });
-    return { admin: data };
+    // Verifica la password (per semplicità, accettiamo la password specifica)
+    if (email === 'lcammarota24@gmail.com' && password === 'Camma8790!') {
+      console.log('Admin login successful');
+      return { admin: data };
+    } else {
+      throw new Error('Credenziali non valide');
+    }
   },
 
   async getAdminStats(): Promise<AdminStats> {
