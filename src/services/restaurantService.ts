@@ -19,6 +19,13 @@ export interface Restaurant {
   averageRating: number;
   totalReviews: number;
   ownerId?: string;
+  // Aggiungo le proprietà mancanti per compatibilità
+  certifications?: string[];
+  cuisineType?: string[];
+  priceRange?: 'low' | 'medium' | 'high';
+  openingHours?: any;
+  type?: 'client' | 'restaurant';
+  createdAt?: Date;
 }
 
 const mapDatabaseToRestaurant = (dbRestaurant: DatabaseRestaurant): Restaurant => ({
@@ -37,7 +44,14 @@ const mapDatabaseToRestaurant = (dbRestaurant: DatabaseRestaurant): Restaurant =
   isActive: dbRestaurant.is_active || false,
   averageRating: dbRestaurant.average_rating || 0,
   totalReviews: dbRestaurant.total_reviews || 0,
-  ownerId: dbRestaurant.owner_id || undefined
+  ownerId: dbRestaurant.owner_id || undefined,
+  // Valori di default per compatibilità
+  certifications: [],
+  cuisineType: [dbRestaurant.category || 'Italiana'],
+  priceRange: 'medium',
+  openingHours: {},
+  type: 'restaurant',
+  createdAt: new Date()
 });
 
 export const restaurantService = {
@@ -73,6 +87,55 @@ export const restaurantService = {
     }
     
     return data ? mapDatabaseToRestaurant(data) : null;
+  },
+
+  async getRestaurantByOwnerId(ownerId: string): Promise<Restaurant | null> {
+    console.log('Fetching restaurant by owner id:', ownerId);
+    
+    const { data, error } = await supabase
+      .from('restaurants')
+      .select('*')
+      .eq('owner_id', ownerId)
+      .eq('is_active', true)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching restaurant by owner:', error);
+      return null;
+    }
+    
+    return data ? mapDatabaseToRestaurant(data) : null;
+  },
+
+  async createRestaurantFromOnboarding(restaurantData: any, ownerId: string): Promise<Restaurant> {
+    console.log('Creating restaurant from onboarding:', restaurantData);
+    
+    const { data, error } = await supabase
+      .from('restaurants')
+      .insert({
+        name: restaurantData.name,
+        description: restaurantData.description,
+        address: restaurantData.address,
+        city: restaurantData.city,
+        phone: restaurantData.phone,
+        email: restaurantData.email,
+        website: restaurantData.website,
+        category: restaurantData.category,
+        cover_image: restaurantData.coverImage,
+        latitude: restaurantData.latitude,
+        longitude: restaurantData.longitude,
+        owner_id: ownerId,
+        is_active: true
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating restaurant:', error);
+      throw error;
+    }
+    
+    return mapDatabaseToRestaurant(data);
   },
 
   async initializeSampleRestaurants(): Promise<void> {

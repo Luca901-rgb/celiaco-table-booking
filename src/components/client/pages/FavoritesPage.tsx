@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useRestaurants } from '@/hooks/useRestaurants';
 import { useAverageRating } from '@/hooks/useReviews';
-import { RestaurantProfile } from '@/types';
+import { Restaurant } from '@/services/restaurantService';
 
 const FavoritesPage = () => {
   const { favorites, toggleFavorite, loading } = useFavorites();
@@ -65,7 +65,7 @@ const FavoritesPage = () => {
 };
 
 interface FavoriteRestaurantCardProps {
-  restaurant: RestaurantProfile;
+  restaurant: Restaurant;
   onRemove: () => void;
 }
 

@@ -6,10 +6,10 @@ import { useRestaurants } from "@/hooks/useRestaurants";
 import { useGeolocation, calculateDistance } from "@/hooks/useGeolocation";
 import SimpleMap from "../components/SimpleMap";
 import { RestaurantCard } from "../components/RestaurantCard";
-import { RestaurantProfile } from "@/types";
+import { Restaurant } from "@/services/restaurantService";
 
-// Extend RestaurantProfile to include distance
-interface RestaurantWithDistance extends RestaurantProfile {
+// Extend Restaurant to include distance
+interface RestaurantWithDistance extends Restaurant {
   distance?: number;
 }
 
@@ -116,8 +116,8 @@ const MapPage = () => {
               <RestaurantCard 
                 key={restaurant.id} 
                 restaurant={restaurant}
-                averageRating={restaurant.average_rating || 0}
-                totalReviews={restaurant.total_reviews || 0}
+                averageRating={restaurant.averageRating || 0}
+                totalReviews={restaurant.totalReviews || 0}
               />
             ))
           )}
