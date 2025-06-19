@@ -4,14 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPinCheck, Navigation, Star, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 import { useGeolocation, calculateDistance, formatDistance } from "@/hooks/useGeolocation";
-import { RestaurantProfile } from "@/types";
+import { Restaurant } from "@/services/restaurantService";
 
 interface SimpleMapProps {
-  restaurants: RestaurantProfile[];
+  restaurants: Restaurant[];
 }
 
 const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
-  const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantProfile | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isListCollapsed, setIsListCollapsed] = useState(false);
   const { location: userLocation } = useGeolocation();
 
@@ -47,14 +47,14 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
     return `${baseUrl}?bbox=${bbox}&layer=mapnik&marker=${mapCenter.lat}%2C${mapCenter.lng}`;
   }, [mapCenter]);
 
-  const openInGoogleMaps = (restaurant: RestaurantProfile) => {
+  const openInGoogleMaps = (restaurant: Restaurant) => {
     if (restaurant.latitude && restaurant.longitude) {
       const url = `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}&travelmode=driving`;
       window.open(url, '_blank');
     }
   };
 
-  const getDistanceToRestaurant = (restaurant: RestaurantProfile): string | null => {
+  const getDistanceToRestaurant = (restaurant: Restaurant): string | null => {
     if (!userLocation || !restaurant.latitude || !restaurant.longitude) {
       return null;
     }
@@ -160,8 +160,8 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
                       
                       <div className="flex items-center gap-1 mt-1">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                        <span className="text-xs font-medium">{(restaurant.average_rating || 0).toFixed(1)}</span>
-                        <span className="text-xs text-gray-500">({restaurant.total_reviews || 0})</span>
+                        <span className="text-xs font-medium">{(restaurant.averageRating || 0).toFixed(1)}</span>
+                        <span className="text-xs text-gray-500">({restaurant.totalReviews || 0})</span>
                       </div>
 
                       {getDistanceToRestaurant(restaurant) && (
@@ -205,8 +205,8 @@ const SimpleMap: React.FC<SimpleMapProps> = ({ restaurants }) => {
                   
                   <div className="flex items-center gap-1 mt-2">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 flex-shrink-0" />
-                    <span className="text-sm font-medium">{(selectedRestaurant.average_rating || 0).toFixed(1)}</span>
-                    <span className="text-xs text-gray-500">({selectedRestaurant.total_reviews || 0} recensioni)</span>
+                    <span className="text-sm font-medium">{(selectedRestaurant.averageRating || 0).toFixed(1)}</span>
+                    <span className="text-xs text-gray-500">({selectedRestaurant.totalReviews || 0} recensioni)</span>
                   </div>
 
                   {getDistanceToRestaurant(selectedRestaurant) && (

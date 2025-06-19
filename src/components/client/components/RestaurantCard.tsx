@@ -3,13 +3,13 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Star, MapPin, Clock, Phone, Heart, Calendar, Navigation } from 'lucide-react';
-import { RestaurantProfile } from '@/types';
+import { Restaurant } from '@/services/restaurantService';
 import { Link } from 'react-router-dom';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useGeolocation, calculateDistance, formatDistance } from '@/hooks/useGeolocation';
 
 interface RestaurantCardProps {
-  restaurant: RestaurantProfile;
+  restaurant: Restaurant;
   averageRating?: number;
   totalReviews?: number;
 }
@@ -23,7 +23,7 @@ export const RestaurantCard = ({
   const { location: userLocation } = useGeolocation();
 
   const formatOpeningHours = (day: string) => {
-    const hours = restaurant.openingHours[day];
+    const hours = restaurant.openingHours?.[day];
     if (hours?.closed) return 'Chiuso';
     return `${hours?.open || '00:00'} - ${hours?.close || '00:00'}`;
   };
